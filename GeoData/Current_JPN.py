@@ -28,6 +28,7 @@ japan_power['capacity_factor'] = (japan_power.estimated_generation_gwh_2017 / ja
 jfuel['average_capacity_factor']=japan_power.groupby('primary_fuel')['capacity_factor'].mean()
 
 
+jpload= pd.read_csv('load.csv', usecols=['time', 'JP'], index_col=0, parse_dates=True )
 
 
 
