@@ -13,9 +13,14 @@ path.merge(Level1, on = 'ISO_1')
 
 
 path['ISO_1']= path['ISO_1'].str.extract('(\d+)')
+path['ISO_1'] = path['ISO_1'].astype(int)
 
-print(path.loc[path['ISO_1'] == 1])
-#Region2= path.loc[]
+
+Region1=path.loc[path['ISO_1'] == 1]
+Region2= path.loc[(path['ISO_1'] >1) & (path['ISO_1'] < 8)]
+Region3= path.loc[(path['ISO_1'] >7) & (path['ISO_1'] < 24)]
+Region4= path.loc[(path['ISO_1'] >23) & (path['ISO_1'] < 40)]
+Region5= path.loc[(path['ISO_1'] >39) ]
 #data = data.str.extract('(\d+)')
 
 #print(path.ISO)
