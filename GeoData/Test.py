@@ -83,13 +83,17 @@ Geo5.plot(ax=ax, color="gray")
 #merged = pygeos.unary_union(geometries)
 
 #%%
+def plot_area(masked, transform, shape):
+    fig, ax = plt.subplots(figsize=(5,5))
+    ax = show(masked, transform=transform, cmap='Greens', vmin=0, ax=ax)
+    shape.plot(ax=ax, edgecolor='k', color='None', linewidth=2)
 
 excluder = ExclusionContainer(crs=3035)
 excluder.add_geometry('ne_10m_roads.gpkg')
 excluder.add_geometry('ne_10m_airports.gpkg')
-
-shape = path.to_crs(excluder.crs).geometry
-shape[0]
+excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', codes=[1,2,3,4,5,6], buffer=1200, crs=3035)
+shape = Geo1.to_crs(excluder.crs)
+#shape[0]
 
 band, transform = shape_availability(shape, excluder)
-
+plot_area(band, transform, shape)
