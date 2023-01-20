@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 import cartopy as cp
 import cartopy.crs as ccrs
+from atlite.gis import shape_availability, ExclusionContainer
+from rasterio.plot import show
 import pyomo as po
 import pyomo.environ as pe
 import pypsa as psa
@@ -80,8 +82,14 @@ Geo5.plot(ax=ax, color="gray")
 #geometries = gdf["geometry"].values
 #merged = pygeos.unary_union(geometries)
 
+#%%
 
+excluder = ExclusionContainer(crs=3035)
+excluder.add_geometry('ne_10m_roads.gpkg')
+excluder.add_geometry('ne_10m_airports.gpkg')
 
+shape = path.to_crs(excluder.crs).geometry
+shape[0]
 
-
+band, transform = shape_availability(shape, excluder)
 
