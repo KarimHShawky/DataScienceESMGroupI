@@ -1,7 +1,15 @@
 
 import pandas as pd 
 import geopandas as gpd
-import atlite as at
+import geopandas as gpd
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
+import cartopy as cp
+import cartopy.crs as ccrs
+import pyomo as po
+import pyomo.environ as pe
+import pypsa as psa
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
@@ -20,7 +28,7 @@ path['ISO_1']= path['ISO_1'].str.extract('(\d+)')
 path['ISO_1'] = path['ISO_1'].astype(int)
 
 
-Region1=path.loc[path['ISO_1'] == 1] # Pop.%  4.26%
+Region1= path.loc[path['ISO_1'] == 1] # Pop.%  4.26%
 Region2= path.loc[(path['ISO_1'] >1) & (path['ISO_1'] < 8)] # 7.01%
 Region3= path.loc[(path['ISO_1'] >7) & (path['ISO_1'] < 24)]# 50.99%
 Region4= path.loc[(path['ISO_1'] >23) & (path['ISO_1'] < 40)]# # 26.48%
@@ -29,13 +37,31 @@ Region5= path.loc[(path['ISO_1'] >39) ]# 11.27%
 
 #%%
 
-#import geopandas as gpd
-
-# Load the GeoDataFrame
-#gdf = gpd.read_file("file.geojson")
-
 # Use the dissolve method to merge the polygons
-#merged_gdf = gdf.dissolve(by=None, aggfunc='first', as_index=True)
+Geo1 = Region1['geometry']
+Geo2 = Region2.dissolve(by=None, aggfunc='first', as_index=True)
+Geo3 = Region3.dissolve(by=None, aggfunc='first', as_index=True)
+Geo4 = Region4.dissolve(by=None, aggfunc='first', as_index=True)
+Geo5 = Region5.dissolve(by=None, aggfunc='first', as_index=True)
+
+
+Geo2= Geo2['geometry']
+Geo3= Geo3['geometry']
+Geo4= Geo4['geometry']
+Geo5= Geo5['geometry']
+
+
+fig = plt.figure(figsize=(13,7))
+ax = plt.axes(projection=ccrs.PlateCarree())
+ax.coastlines(linewidth=0.7)
+ax.add_feature(cp.feature.BORDERS, color="grey", linewidth=0.3)
+
+
+Geo1.plot(ax=ax, color="red")
+Geo2.plot(ax=ax, color="gold")
+Geo3.plot(ax=ax, color="green")
+Geo4.plot(ax=ax, color="blue")
+Geo5.plot(ax=ax, color="gray")
 
 #%%
 
