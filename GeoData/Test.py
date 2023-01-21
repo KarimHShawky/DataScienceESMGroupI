@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 #Total Population ca. 124.840.000
-path=gpd.read_file('gadm_410-levels-ADM_1-JPN.gpkg')
+path=gpd.read_file('gadm_410-levels-ADM_1-JPN.gpkg') #layer 1 admin regions jpn
 #print(path.NAME_1)
 Level1=gpd.read_file("gadmJPN-Level1Areas.json")
 Level1['ISO_1'].iloc[26]='JP-42'
@@ -25,6 +25,12 @@ Level1['ISO_1'].iloc[12]='JP-28'
 path['ISO_1']=Level1['ISO_1']
 path.merge(Level1, on = 'ISO_1')
 
+#%% read csv data (load  & Powerplants)
+load=gpd.read_file('load.csv')
+powerplants=gpd.read_file('global_power_plant_database.csv')
+powerplants = powerplants[powerplants['country'] == 'JPN']
+powerplants_gdf = gpd.GeoDataFrame(powerplants, geometry=gpd.points_from_xy(powerplants.longitude, powerplants.latitude))
+#%%
 
 path['ISO_1']= path['ISO_1'].str.extract('(\d+)')
 path['ISO_1'] = path['ISO_1'].astype(int)
@@ -89,11 +95,42 @@ def plot_area(masked, transform, shape):
     shape.plot(ax=ax, edgecolor='k', color='None', linewidth=2)
 
 excluder = ExclusionContainer(crs=3035)
-excluder.add_geometry('ne_10m_roads.gpkg')
-excluder.add_geometry('ne_10m_airports.gpkg')
+#excluder.add_geometry('gadm_410-levels-ADM_1-JPN.gpkg') # wurde oben verwendet
+excluder.add_geometry('eez_boundaries_v11.gpkg') #marine regions
+excluder.add_geometry('ne_10m_roads.gpkg')          #roeads
+excluder.add_geometry('ne_10m_airports.gpkg')       #airports
 excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', codes=[1,2,3,4,5,6], buffer=1200, crs=3035)
+excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif', codes=[1,2,3,4,5,6], buffer=1200, crs=3035) #copernicus land 100 m 
+# PORBAV doesen't make any difference in the plot ??
 shape = Geo1.to_crs(excluder.crs)
 #shape[0]
 
 band, transform = shape_availability(shape, excluder)
 plot_area(band, transform, shape)
+powerplants_gdf.plot(ax=ax, marker='o', color='black', markersize=5)
+
+shape2 = Geo2.to_crs(excluder.crs)
+#shape[0]
+
+band, transform = shape_availability(shape2, excluder)
+plot_area(band, transform, shape2)
+
+shape3 = Geo3.to_crs(excluder.crs)
+#shape[0]
+
+band, transform = shape_availability(shape3, excluder)
+plot_area(band, transform, shape3)
+
+shape4 = Geo4.to_crs(excluder.crs)
+#shape[0]
+
+band, transform = shape_availability(shape4, excluder)
+plot_area(band, transform, shape4)
+
+shape5 = Geo5.to_crs(excluder.crs)
+#shape[0]
+
+band, transform = shape_availability(shape5, excluder)
+plot_area(band, transform, shape5)
+
+
