@@ -1,17 +1,23 @@
-
+#IMPORTS
 import pandas as pd 
 import geopandas as gpd
-import geopandas as gpd
-import pandas as pd
+
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
+
 import cartopy as cp
 import cartopy.crs as ccrs
+
+import atlite
 from atlite.gis import shape_availability, ExclusionContainer
+
 from rasterio.plot import show
+
 import pyomo as po
 import pyomo.environ as pe
+
 import pypsa as psa
+
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
@@ -25,12 +31,16 @@ Level1['ISO_1'].iloc[12]='JP-28'
 path['ISO_1']=Level1['ISO_1']
 path.merge(Level1, on = 'ISO_1')
 
+
 #%% read csv data (load  & Powerplants)
+
 load=gpd.read_file('load.csv')
 powerplants=gpd.read_file('global_power_plant_database.csv')
 powerplants = powerplants[powerplants['country'] == 'JPN']
 powerplants_gdf = gpd.GeoDataFrame(powerplants, geometry=gpd.points_from_xy(powerplants.longitude, powerplants.latitude))
-#%%
+
+
+#%% Defining Regions
 
 path['ISO_1']= path['ISO_1'].str.extract('(\d+)')
 path['ISO_1'] = path['ISO_1'].astype(int)
@@ -43,7 +53,7 @@ Region4= path.loc[(path['ISO_1'] >23) & (path['ISO_1'] < 40)]# # 26.48%
 Region5= path.loc[(path['ISO_1'] >39) ]# 11.27%
 
 
-#%%
+#%% Plotting the Regions
 
 # Use the dissolve method to merge the polygons
 Geo1 = Region1['geometry']
@@ -71,7 +81,8 @@ Geo3.plot(ax=ax, color="green")
 Geo4.plot(ax=ax, color="blue")
 Geo5.plot(ax=ax, color="gray")
 
-#%%
+
+#%% Regions Idea 2
 
 #from shapely.ops import unary_union
 
@@ -81,27 +92,34 @@ Geo5.plot(ax=ax, color="gray")
 # Use the unary_union method to merge the geometries
 #merged_geometry = unary_union(geometries)
 
-#%%
+#%% Regions Idea 3
 
 #import pygeos
 
 #geometries = gdf["geometry"].values
 #merged = pygeos.unary_union(geometries)
 
-#%%
+#%% Excluders
+
 def plot_area(masked, transform, shape):
-    fig, ax = plt.subplots(figsize=(5,5))
+    fig, ax = plt.subplots(figsize=(17,17))
     ax = show(masked, transform=transform, cmap='Greens', vmin=0, ax=ax)
     shape.plot(ax=ax, edgecolor='k', color='None', linewidth=2)
 
+
 excluder = ExclusionContainer(crs=3035)
 #excluder.add_geometry('gadm_410-levels-ADM_1-JPN.gpkg') # wurde oben verwendet
-excluder.add_geometry('eez_boundaries_v11.gpkg') #marine regions
-excluder.add_geometry('ne_10m_roads.gpkg')          #roeads
-excluder.add_geometry('ne_10m_airports.gpkg')       #airports
-excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', codes=[1,2,3,4,5,6], buffer=1200, crs=3035)
-excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif', codes=[1,2,3,4,5,6], buffer=1200, crs=3035) #copernicus land 100 m 
-# PORBAV doesen't make any difference in the plot ??
+
+excluder.add_geometry('eez_boundaries_v11.gpkg')    #marine regions
+excluder.add_geometry('ne_10m_roads.gpkg')          #Roads
+excluder.add_geometry('ne_10m_airports.gpkg')       #Airports
+
+excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', 
+                    codes=[1,2,3,4,5,6], buffer=1200, crs=3035) #Protected Areas
+excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
+                    codes=[1,2,3,4,5,6], buffer=1200, crs=3035) #Copernicus Global Land Service: Land Cover at 100 m 
+                                                                #PORBAV doesen't make any difference in the plot ??
+
 shape = Geo1.to_crs(excluder.crs)
 #shape[0]
 
@@ -111,26 +129,38 @@ powerplants_gdf.plot(ax=ax, marker='o', color='black', markersize=5)
 
 shape2 = Geo2.to_crs(excluder.crs)
 #shape[0]
-
 band, transform = shape_availability(shape2, excluder)
 plot_area(band, transform, shape2)
 
 shape3 = Geo3.to_crs(excluder.crs)
 #shape[0]
-
 band, transform = shape_availability(shape3, excluder)
 plot_area(band, transform, shape3)
 
 shape4 = Geo4.to_crs(excluder.crs)
 #shape[0]
-
 band, transform = shape_availability(shape4, excluder)
 plot_area(band, transform, shape4)
 
 shape5 = Geo5.to_crs(excluder.crs)
 #shape[0]
-
 band, transform = shape_availability(shape5, excluder)
 plot_area(band, transform, shape5)
 
 
+#%% Eligibility
+
+print(band.any())
+print(transform)
+
+eligible_cells = band.sum()
+cell_area = excluder.res**2
+eligible_area = cell_area * eligible_cells
+country_area = shape.geometry.area[11]
+print(eligible_area / country_area * 100, '%')
+
+Eligibility1 = band.sum() * (excluder.res)**2 / (shape.geometry.area[11] * 100)
+#Eligibility2 = (band.sum() * (excluder.res**2)) / ((shape2.geometry.area[0]) * 100)
+#Eligibility3 = (band.sum() * (excluder.res**2)) / ((shape3.geometry.area[0]) * 100)
+#Eligibility4 = (band.sum() * (excluder.res**2)) / ((shape4.geometry.area[0]) * 100)
+#Eligibility5 = (band.sum() * (excluder.res**2)) / ((shape5.geometry.area[0]) * 100)
