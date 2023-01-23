@@ -18,6 +18,9 @@ import pyomo.environ as pe
 
 import pypsa as psa
 
+from shapely.geometry import LineString
+
+
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
@@ -146,6 +149,34 @@ shape5 = Geo5.to_crs(excluder.crs)
 #shape[0]
 band, transform = shape_availability(shape5, excluder)
 plot_area(band, transform, shape5)
+
+
+#%% Transmission lines 
+
+# Define the transmission lines
+transmission_lines = pd.DataFrame({'start_x': [Geo1.centroid.x, Geo2.centroid.x, Geo3.centroid.x,Geo4.centroid.x],
+                                  'start_y': [Geo1.centroid.y, Geo2.centroid.y, Geo3.centroid.y, Geo4.centroid.y],
+                                  'end_x': [Geo2.centroid.x, Geo3.centroid.x, Geo4.centroid.x,Geo5.centroid.x],
+                                  'end_y': [Geo2.centroid.y, Geo3.centroid.y, Geo4.centroid.y, Geo5.centroid.y]})
+
+# Create a geometry column for the transmission lines
+transmission_lines['geometry'] = transmission_lines.apply(lambda x: LineString([(x.start_x, x.start_y), (x.end_x, x.end_y)]), axis=1)
+
+# Create a GeoDataFrame for the transmission lines
+transmission_lines_gdf = gpd.GeoDataFrame(transmission_lines, geometry='geometry')
+
+# Plot the transmission lines on top of the regions
+fig = plt.figure(figsize=(13,7))
+ax = plt.axes(projection=ccrs.PlateCarree())
+ax.coastlines(linewidth=0.7)
+ax.add_feature(cp.feature.BORDERS, color="grey", linewidth=0.3)
+
+Geo1.plot(ax=ax, color="red")
+Geo2.plot(ax=ax, color="gold")
+Geo3.plot(ax=ax, color="green")
+Geo4.plot(ax=ax, color="blue")
+Geo5.plot(ax=ax, color="gray")
+transmission_lines_gdf.plot(ax=ax, color='black', linewidth=2)
 
 
 #%% Eligibility
