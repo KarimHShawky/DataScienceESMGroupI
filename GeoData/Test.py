@@ -49,11 +49,11 @@ path['ISO_1']= path['ISO_1'].str.extract('(\d+)')
 path['ISO_1'] = path['ISO_1'].astype(int)
 
 
-Region1= path.loc[path['ISO_1'] == 1] # Pop.%  4.26%
-Region2= path.loc[(path['ISO_1'] >1) & (path['ISO_1'] < 8)] # 7.01%
-Region3= path.loc[(path['ISO_1'] >7) & (path['ISO_1'] < 24)]# 50.99%
-Region4= path.loc[(path['ISO_1'] >23) & (path['ISO_1'] < 40)]# # 26.48%
-Region5= path.loc[(path['ISO_1'] >39) ]# 11.27%
+Region1= path.loc[path['ISO_1'] == 1]                       # Pop.%  4.26%
+Region2= path.loc[(path['ISO_1'] >1) & (path['ISO_1'] < 8)]         # 7.01%
+Region3= path.loc[(path['ISO_1'] >7) & (path['ISO_1'] < 24)]        # 50.99%
+Region4= path.loc[(path['ISO_1'] >23) & (path['ISO_1'] < 40)]       # 26.48%
+Region5= path.loc[(path['ISO_1'] >39) ]                             # 11.27%
 
 
 #%% Plotting the Regions
@@ -102,7 +102,7 @@ Geo5.plot(ax=ax, color="gray")
 #geometries = gdf["geometry"].values
 #merged = pygeos.unary_union(geometries)
 
-#%% Excluders
+#%% Excluders - onwind
 
 def plot_area(masked, transform, shape):
     fig, ax = plt.subplots(figsize=(17,17))
@@ -113,15 +113,21 @@ def plot_area(masked, transform, shape):
 excluder = ExclusionContainer(crs=3035)
 #excluder.add_geometry('gadm_410-levels-ADM_1-JPN.gpkg') # wurde oben verwendet
 
-excluder.add_geometry('eez_boundaries_v11.gpkg')    #marine regions
-excluder.add_geometry('ne_10m_roads.gpkg')          #Roads
-excluder.add_geometry('ne_10m_airports.gpkg')       #Airports
+#excluder.add_geometry('eez_boundaries_v11.gpkg')                #marine regions
+#excluder.add_geometry('ne_10m_roads.gpkg', buffer=300)          #Roads (dosent work :( , but the exclusion should be cover by the code 50 of PROBAV)
+excluder.add_geometry('ne_10m_airports.gpkg', buffer=10000)      #Airports 
 
-excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', 
-                    codes=[1,2,3,4,5,6], buffer=1200, crs=3035) #Protected Areas
+excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif',crs=3035) #Protected Areas
 excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
-                    codes=[1,2,3,4,5,6], buffer=1200, crs=3035) #Copernicus Global Land Service: Land Cover at 100 m 
-                                                                #PORBAV doesen't make any difference in the plot ??
+                    codes=[10,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44] , crs=3035) # other non stuidable areas
+excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
+                    codes=[50], buffer=1000, crs=3035) # 300m buffer from built up areas
+#onwind
+#wind-ex=[1,2,3,4,5,6,7,8,9,10,11,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44]
+#wind-in=[12,13,14,18,19,20,21,26,28,29,32,33]
+#exlude 6 (airports) with buffer 10km
+#exlude 4 (roads) with buffer 300m
+#exlude 1,2,3,7,8,9,11 (built up areas) with buffer 1000m
 
 shape = Geo1.to_crs(excluder.crs)
 #shape[0]
@@ -151,6 +157,60 @@ band, transform = shape_availability(shape5, excluder)
 plot_area(band, transform, shape5)
 
 
+
+
+#%% Excluders -solar in bearbeitung
+
+def plot_area(masked, transform, shape):
+    fig, ax = plt.subplots(figsize=(17,17))
+    ax = show(masked, transform=transform, cmap='Greens', vmin=0, ax=ax)
+    shape.plot(ax=ax, edgecolor='k', color='None', linewidth=2)
+
+
+excluder = ExclusionContainer(crs=3035)
+#excluder.add_geometry('gadm_410-levels-ADM_1-JPN.gpkg') # wurde oben verwendet
+
+
+excluder.add_geometry('ne_10m_airports.gpkg', buffer=10000)     #Airports
+#WDPA_Oct2022_Public_shp-JPN.tif
+#PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif
+excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', 
+                      crs=3035) #Protected Areas
+#codes=[1,2,3,7,8,9,11],buffer=1000
+
+excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
+                    codes=[10,15,16,17,22,23,24,25,27,30,31,34,39,40,43,44], crs=3035)
+#Copernicus Global Land Service: Land Cover at 100 m 
+#PORBAV doesen't make any difference in the plot ??
+
+shape = Geo1.to_crs(excluder.crs)
+#shape[0]
+
+band, transform = shape_availability(shape, excluder)
+plot_area(band, transform, shape)
+powerplants_gdf.plot(ax=ax, marker='o', color='black', markersize=5)
+
+shape2 = Geo2.to_crs(excluder.crs)
+#shape[0]
+band, transform = shape_availability(shape2, excluder)
+plot_area(band, transform, shape2)
+
+shape3 = Geo3.to_crs(excluder.crs)
+#shape[0]
+band, transform = shape_availability(shape3, excluder)
+plot_area(band, transform, shape3)
+
+shape4 = Geo4.to_crs(excluder.crs)
+#shape[0]
+band, transform = shape_availability(shape4, excluder)
+plot_area(band, transform, shape4)
+
+shape5 = Geo5.to_crs(excluder.crs)
+#shape[0]
+band, transform = shape_availability(shape5, excluder)
+plot_area(band, transform, shape5)
+
+#
 #%% Transmission lines 
 
 # Define the transmission lines
