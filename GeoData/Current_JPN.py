@@ -36,5 +36,30 @@ jpload1=jpload.resample('3H').sum()
 
 
 
+#%%
+'Costs'
+battery_storage_c= 187+ 215 # euro/kWh Battery storage + Inverter
+
+offwind_c=1602.34 # euro/kWh
+onwind_c= 	1077.17 # euro/kWh
+
+solar_c=797.07 # euro/kWh solar_rooftop
+solar_floating=942.86 #?
+
+hydrogen_storage_c= 	3.6 *169.79 / 10.8e3 #  3.6 * euro/m^3 * 1/(kJ/m^3)
+fuel_cell_c= 1200.0 #euro/kWh
+electrolysis_c=550.0 # euro/kWh
+
+
+
+
+
+
+
+
+
+
+
+
 
 
