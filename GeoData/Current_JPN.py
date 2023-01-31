@@ -31,7 +31,7 @@ jfuel['estimated_generation_2017'].plot.pie(autopct='%1.1f', figsize=(7,7))
 
 jpload= pd.read_csv('load.csv', usecols=['time', 'JP'], index_col=0, parse_dates=True )
 
-
+jpload1=jpload.resample('3H').sum()
 
 
 
