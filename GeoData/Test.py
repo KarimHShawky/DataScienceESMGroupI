@@ -1,4 +1,4 @@
-#IMPORTS
+#%% IMPORTS
 import pandas as pd 
 import geopandas as gpd
 
@@ -48,8 +48,8 @@ powerplants_gdf = gpd.GeoDataFrame(powerplants, geometry=gpd.points_from_xy(powe
 path['ISO_1']= path['ISO_1'].str.extract('(\d+)')
 path['ISO_1'] = path['ISO_1'].astype(int)
 
-
-Region1= path.loc[path['ISO_1'] == 1]                       # Pop.%  4.26%
+                                                                    # Pop. %
+Region1= path.loc[path['ISO_1'] == 1]                               # 4.26%
 Region2= path.loc[(path['ISO_1'] >1) & (path['ISO_1'] < 8)]         # 7.01%
 Region3= path.loc[(path['ISO_1'] >7) & (path['ISO_1'] < 24)]        # 50.99%
 Region4= path.loc[(path['ISO_1'] >23) & (path['ISO_1'] < 40)]       # 26.48%
@@ -102,6 +102,7 @@ Geo5.plot(ax=ax, color="gray")
 #geometries = gdf["geometry"].values
 #merged = pygeos.unary_union(geometries)
 
+<<<<<<< HEAD
 #%% separate Powerplants into Regions 
 #powerplants_gdf['Region'] = None
 #for i, row in powerplants_gdf.iterrows():
@@ -127,79 +128,84 @@ print("\nGeoDataFrame :\n", Geo1_gdf)
 
 Geo1_popwerplants=gpd.sjoin(Geo1_gdf, powerplants_geo_gdf, op='contains')
 #%% Excluders - onwind
+=======
+#%% Plot Function
+>>>>>>> c3323361b9e69cb586e155ca35f0af22b47bdc45
 
 def plot_area(masked, transform, shape):
     fig, ax = plt.subplots(figsize=(17,17))
     ax = show(masked, transform=transform, cmap='Greens', vmin=0, ax=ax)
     shape.plot(ax=ax, edgecolor='k', color='None', linewidth=2)
 
+#%% Excluders - Onwind
 
 excluder = ExclusionContainer(crs=3035)
 #excluder.add_geometry('gadm_410-levels-ADM_1-JPN.gpkg') # wurde oben verwendet
 
-#excluder.add_geometry('eez_boundaries_v11.gpkg')                #marine regions
 #excluder.add_geometry('ne_10m_roads.gpkg', buffer=300)          #Roads (dosent work :( , but the exclusion should be cover by the code 50 of PROBAV)
 excluder.add_geometry('ne_10m_airports.gpkg', buffer=10000)      #Airports 
 
 excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif',crs=3035) #Protected Areas
 excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
-                    codes=[10,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44] , crs=3035) # other non stuidable areas
+                    codes=[10,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44] , crs=3035) # other non suitable areas
 excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
                     codes=[50], buffer=1000, crs=3035) # 300m buffer from built up areas
 #onwind
 #wind-ex=[1,2,3,4,5,6,7,8,9,10,11,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44]
 #wind-in=[12,13,14,18,19,20,21,26,28,29,32,33]
-#exlude 6 (airports) with buffer 10km
-#exlude 4 (roads) with buffer 300m
-#exlude 1,2,3,7,8,9,11 (built up areas) with buffer 1000m
+#exclude 6 (airports) with buffer 10km
+#exclude 4 (roads) with buffer 300m
+#exclude 1,2,3,7,8,9,11 (built up areas) with buffer 1000m
 
-shape = Geo1.to_crs(excluder.crs)
-#shape[0]
+#%% Are these needed? shouldn't they be called once in the end?
 
-band, transform = shape_availability(shape, excluder)
-plot_area(band, transform, shape)
-powerplants_gdf.plot(ax=ax, marker='o', color='black', markersize=5)
+# shape = Geo1.to_crs(excluder.crs)
+# #shape[0]
 
-shape2 = Geo2.to_crs(excluder.crs)
-#shape[0]
-band, transform = shape_availability(shape2, excluder)
-plot_area(band, transform, shape2)
+# band, transform = shape_availability(shape, excluder)
+# plot_area(band, transform, shape)
+# powerplants_gdf.plot(ax=ax, marker='o', color='black', markersize=5)
 
-shape3 = Geo3.to_crs(excluder.crs)
-#shape[0]
-band, transform = shape_availability(shape3, excluder)
-plot_area(band, transform, shape3)
+# shape2 = Geo2.to_crs(excluder.crs)
+# #shape[0]
+# band, transform = shape_availability(shape2, excluder)
+# plot_area(band, transform, shape2)
 
-shape4 = Geo4.to_crs(excluder.crs)
-#shape[0]
-band, transform = shape_availability(shape4, excluder)
-plot_area(band, transform, shape4)
+# shape3 = Geo3.to_crs(excluder.crs)
+# #shape[0]
+# band, transform = shape_availability(shape3, excluder)
+# plot_area(band, transform, shape3)
 
-shape5 = Geo5.to_crs(excluder.crs)
-#shape[0]
-band, transform = shape_availability(shape5, excluder)
-plot_area(band, transform, shape5)
+# shape4 = Geo4.to_crs(excluder.crs)
+# #shape[0]
+# band, transform = shape_availability(shape4, excluder)
+# plot_area(band, transform, shape4)
+
+# shape5 = Geo5.to_crs(excluder.crs)
+# #shape[0]
+# band, transform = shape_availability(shape5, excluder)
+# plot_area(band, transform, shape5)
+
+#%% Excluders - Offwind (in bearbeitung)
+
+#within EEZ --> no code needed? 
+
+#no natural protection areas --> included in Solar exclusions
+
+#10k min distance to shore
+excluder.add_geometry('eez_boundaries_v11.gpkg', buffer=10000)
+
+#up to water depth of 50m
 
 
-
-
-#%% Excluders -solar in bearbeitung
-
-def plot_area(masked, transform, shape):
-    fig, ax = plt.subplots(figsize=(17,17))
-    ax = show(masked, transform=transform, cmap='Greens', vmin=0, ax=ax)
-    shape.plot(ax=ax, edgecolor='k', color='None', linewidth=2)
-
-
-excluder = ExclusionContainer(crs=3035)
-#excluder.add_geometry('gadm_410-levels-ADM_1-JPN.gpkg') # wurde oben verwendet
-
+#%% Excluders - Solar (in bearbeitung)
 
 excluder.add_geometry('ne_10m_airports.gpkg', buffer=10000)     #Airports
+
 #WDPA_Oct2022_Public_shp-JPN.tif
 #PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif
-excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', 
-                      crs=3035) #Protected Areas
+
+excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', crs=3035) #Protected Areas
 #codes=[1,2,3,7,8,9,11],buffer=1000
 
 excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
@@ -207,6 +213,8 @@ excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification
 #Copernicus Global Land Service: Land Cover at 100 m 
 #PORBAV doesen't make any difference in the plot ??
 
+#%% Add exclusions to each region and plot it
+
 shape = Geo1.to_crs(excluder.crs)
 #shape[0]
 
@@ -234,7 +242,7 @@ shape5 = Geo5.to_crs(excluder.crs)
 band, transform = shape_availability(shape5, excluder)
 plot_area(band, transform, shape5)
 
-#
+
 #%% Transmission lines 
 
 # Define the transmission lines
