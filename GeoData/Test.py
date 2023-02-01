@@ -102,6 +102,30 @@ Geo5.plot(ax=ax, color="gray")
 #geometries = gdf["geometry"].values
 #merged = pygeos.unary_union(geometries)
 
+#%% separate Powerplants into Regions 
+#powerplants_gdf['Region'] = None
+#for i, row in powerplants_gdf.iterrows():
+#    for j, geo in enumerate(['Geo1', 'Geo2', 'Geo3', 'Geo4', 'Geo5']):
+#        if row['geometry'].within(eval(geo)['geometry'].unary_union):
+#            powerplants_gdf.at[i, 'Region'] = geo
+
+# create DF from regions (Geo1-Geo5) to compare geometry 
+
+#union = Geo1.unary_union
+#Geo1 = union.envelope
+
+Geo1_gdf = gpd.GeoDataFrame(gpd.GeoSeries(Geo1), crs=3035)
+Geo1_gdf = Geo1_gdf.rename(columns={0:'geometry'}).set_geometry('geometry').to_crs(3035)
+
+
+powerplants_geometry=powerplants_gdf['geometry']
+powerplants_geo_gdf = gpd.GeoDataFrame(gpd.GeoSeries(powerplants_geometry), crs=3035)
+powerplants_geo_gdf = powerplants_geo_gdf.rename(columns={0:'geometry'}).set_geometry('geometry')
+
+
+print("\nGeoDataFrame :\n", Geo1_gdf)
+
+Geo1_popwerplants=gpd.sjoin(Geo1_gdf, powerplants_geo_gdf, op='contains')
 #%% Excluders - onwind
 
 def plot_area(masked, transform, shape):
