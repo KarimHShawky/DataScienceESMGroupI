@@ -13,14 +13,20 @@ point3=np.array[43, 40]
 point4=np.array[43, 40]
 point5=np.array[43, 40]
 
-network.add('Bus', "R1", x=point1[0],y=point1[1], v_nom=400, carrier= 'AC')
-network.add('Bus', "R2", x=point2[0],y=point2[1], v_nom=400, carrier= 'AC')
-network.add('Bus', "R3", x=point3[0],y=point3[1], v_nom=400, carrier= 'AC')
-network.add('Bus', "R4", x=point4[0],y=point4[1], v_nom=400, carrier= 'AC')
-network.add('Bus', "R5", x=point5[0],y=point5[1], v_nom=400, carrier= 'AC')
+for i in range (5):
+    network.add('Bus', f"Region{i}", x=f"point{i}"[0],y=f"point{i}"[1], v_nom=400, carrier= 'AC')
 
+for i in range(5):
+    network.add("Store", f"battery_R{i}", bus=f"Region{i}", 
+                 carrier="electricity",
+                 capacity_p_max=10,
+                 efficiency=0.9)
 
-
+for i in range(5):
+    network.add("Store", f"hydro_R{i}", bus=f"Region{i}", 
+                 carrier="hydro",
+                 capacity_p_max=20,
+                 efficiency=0.8)
 
 
 

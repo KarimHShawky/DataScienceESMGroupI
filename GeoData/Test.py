@@ -40,6 +40,7 @@ path.merge(Level1, on = 'ISO_1')
 load=gpd.read_file('load.csv')
 powerplants=gpd.read_file('global_power_plant_database.csv')
 powerplants = powerplants[powerplants['country'] == 'JPN']
+powerplants = powerplants.drop_duplicates()
 powerplants_gdf = gpd.GeoDataFrame(powerplants, geometry=gpd.points_from_xy(powerplants.longitude, powerplants.latitude))
 
 
@@ -99,6 +100,14 @@ Geo5.plot(ax=ax, color="gray")
 #distances.loc["DEU", "NLD"]
 
 
+<<<<<<< HEAD
+=======
+#import pygeos
+
+#geometries = gdf["geometry"].values
+#merged = pygeos.unary_union(geometries)
+
+>>>>>>> e9512372408abf2a06115cfb374ecc59e53be44d
 #<<<<<<< HEAD
 #%% separate Powerplants into Regions 
 #powerplants_gdf['Region'] = None
