@@ -10,7 +10,7 @@ url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outpus/co
 costs = pd.read_csv(url, index_col=[0,1])
 
 
-
+hydro_power=0
 
 network=psa.Network()
 
@@ -30,14 +30,14 @@ for i in range(5):
                  efficiency=0.9)
 
 for i in range(5):
-    network.add("Store", f"hydro_R{i}", bus=f"Region{i}", 
-                 carrier="hydro",
+    network.add("Store", f"hydrogen_R{i}", bus=f"Region{i}", 
+                 carrier="hydrogen",
                  capacity_p_max=20,
                  efficiency=0.8)
 
 
 
-carriers = ["onwind", "offwind", "solar",  "hydrogen storage underground", "battery storage"]
+carriers = ["onwind", "offwind", "solar",  "hydrogen storage underground", "battery storage", "hydro power"]
 
 network.madd(
     "Carrier",
@@ -61,11 +61,20 @@ for i in range(5):
             efficiency=costs.at[tech, "efficiency"],
            p_nom_extendable=True,
            )
+    network.add( "Generator",
+     'hydro power',
+     bus=f"Region{i}",
+     carrier='hydro power',
+     p_nom= hydro_power[i] , 
+     capital_cost=0,
+     marginal_cost=0,
+     efficiency=costs.at[tech, "efficiency"],
+    p_nom_extendable=True,
+    )
     
     
     
-    
-        network.add(
+    network.add(
             "StorageUnit",
             "battery storage",
             bus=f"Region{i}",
