@@ -100,14 +100,14 @@ Geo5.plot(ax=ax, color="gray")
 #distances.loc["DEU", "NLD"]
 
 
-<<<<<<< HEAD
-=======
+#<<<<<<< HEAD
+#=======
 #import pygeos
 
 #geometries = gdf["geometry"].values
 #merged = pygeos.unary_union(geometries)
 
->>>>>>> e9512372408abf2a06115cfb374ecc59e53be44d
+#>>>>>>> e9512372408abf2a06115cfb374ecc59e53be44d
 #<<<<<<< HEAD
 #%% separate Powerplants into Regions 
 #powerplants_gdf['Region'] = None
@@ -121,18 +121,32 @@ Geo5.plot(ax=ax, color="gray")
 #union = Geo1.unary_union
 #Geo1 = union.envelope
 
-Geo1_gdf = gpd.GeoDataFrame(gpd.GeoSeries(Geo1), crs=3035)
-Geo1_gdf = Geo1_gdf.rename(columns={0:'geometry'}).set_geometry('geometry').to_crs(3035)
+Geo1_gdf = gpd.GeoDataFrame(gpd.GeoSeries(Geo1))
+Geo2_gdf = gpd.GeoDataFrame(gpd.GeoSeries(Geo2))
+Geo3_gdf = gpd.GeoDataFrame(gpd.GeoSeries(Geo3))#.to_crs(54009)
+Geo4_gdf = gpd.GeoDataFrame(gpd.GeoSeries(Geo4))#.to_crs(4087)
+Geo5_gdf = gpd.GeoDataFrame(gpd.GeoSeries(Geo5))#.to_crs(4087)
 
+#Geo1_gdf = Geo1_gdf.rename(columns={0:'geometry'}).set_geometry('geometry').to_crs(4087)
+GeoRegions_gdf = Geo1_gdf.append(Geo2_gdf, ignore_index=True)
+GeoRegions_gdf = GeoRegions_gdf.append(Geo3_gdf, ignore_index=True)
+GeoRegions_gdf = GeoRegions_gdf.append(Geo4_gdf, ignore_index=True)
+GeoRegions_gdf = GeoRegions_gdf.append(Geo5_gdf, ignore_index=True)
+GeoRegions_gdf = GeoRegions_gdf.rename(columns={0:'geometry'}).set_geometry('geometry')#.to_crs(4087)
 
-powerplants_geometry=powerplants_gdf['geometry']
-powerplants_geo_gdf = gpd.GeoDataFrame(gpd.GeoSeries(powerplants_geometry), crs=3035)
+powerplants_geometry=powerplants_gdf
+powerplants_geo_gdf = gpd.GeoDataFrame((powerplants_geometry), crs=4326)
 powerplants_geo_gdf = powerplants_geo_gdf.rename(columns={0:'geometry'}).set_geometry('geometry')
 
 
-print("\nGeoDataFrame :\n", Geo1_gdf)
+print("\nGeoDataFrame :\n", GeoRegions_gdf)
+result_df = gpd.sjoin(powerplants_geo_gdf, GeoRegions_gdf, how="left", op='within')
+result_df['index_right']+=1
+result_df.rename(columns={'index_right':'Georegion'}, inplace = True) 
 
-Geo1_popwerplants=gpd.sjoin(Geo1_gdf, powerplants_geo_gdf, op='contains')
+# Realised, some Points ARE nan, menans we dont have 
+# the whole landscape of Japan (missing islands?)
+
 #%% Excluders - onwind
 #=======
 #%% Plot Function
@@ -262,7 +276,15 @@ transmission_lines['geometry'] = transmission_lines.apply(lambda x: LineString([
 
 # Create a GeoDataFrame for the transmission lines
 transmission_lines_gdf = gpd.GeoDataFrame(transmission_lines, geometry='geometry')
+#%% length of Transmission lines and afterwards marginal cost 
+print(transmission_lines_gdf['geometry'][0].length, 'Transmission lines Region1-2 in 100km')
+print(transmission_lines_gdf['geometry'][1].length, 'Transmission lines Region2-3 in 100km')
+print(transmission_lines_gdf['geometry'][2].length, 'Transmission lines Region3-4 in 100km')
+print(transmission_lines_gdf['geometry'][3].length, 'Transmission lines Region4-5 in 100km')
 
+transmission_lines_gdf['Cost transmission line not specific per MW (still missing ADD LATER)']=transmission_lines_gdf['geometry'].length*100*1.5*400 # *(MW)  Cost = 1.5*400€/MW/length
+print(transmission_lines_gdf['Cost transmission line not specific per MW (still missing ADD LATER)'])
+#%%
 # Plot the transmission lines on top of the regions
 fig = plt.figure(figsize=(13,7))
 ax = plt.axes(projection=ccrs.PlateCarree())
