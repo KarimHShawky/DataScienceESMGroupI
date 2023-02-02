@@ -85,24 +85,21 @@ Geo4.plot(ax=ax, color="blue")
 Geo5.plot(ax=ax, color="gray")
 
 
-#%% Regions Idea 2
 
-#from shapely.ops import unary_union
 
-# Get the geometries from the geometry column
-#geometries = gdf['geometry']
+#%%Region distance
 
-# Use the unary_union method to merge the geometries
-#merged_geometry = unary_union(geometries)
+#point1 = Geo1.representative_point()
+#point2 = Geo2.representative_point()
+#point3 = Geo4.representative_point()
+#point4 = Geo4.representative_point()
+#point4 = Geo5.representative_point()
+#Jpoints= pd.DataFrame[point1, point2, point3, point4, point5]
+#distances = pd.concat({k: points.distance(p) for k, p in points.items()}, axis=1).div(1e3) # km
+#distances.loc["DEU", "NLD"]
 
-#%% Regions Idea 3
 
-#import pygeos
-
-#geometries = gdf["geometry"].values
-#merged = pygeos.unary_union(geometries)
-
-<<<<<<< HEAD
+#<<<<<<< HEAD
 #%% separate Powerplants into Regions 
 #powerplants_gdf['Region'] = None
 #for i, row in powerplants_gdf.iterrows():
@@ -128,9 +125,9 @@ print("\nGeoDataFrame :\n", Geo1_gdf)
 
 Geo1_popwerplants=gpd.sjoin(Geo1_gdf, powerplants_geo_gdf, op='contains')
 #%% Excluders - onwind
-=======
+#=======
 #%% Plot Function
->>>>>>> c3323361b9e69cb586e155ca35f0af22b47bdc45
+#>>>>>>> c3323361b9e69cb586e155ca35f0af22b47bdc45
 
 def plot_area(masked, transform, shape):
     fig, ax = plt.subplots(figsize=(17,17))
