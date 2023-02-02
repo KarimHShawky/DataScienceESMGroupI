@@ -100,15 +100,24 @@ Geo5.plot(ax=ax, color="gray")
 #distances.loc["DEU", "NLD"]
 
 
+<<<<<<< HEAD
 #<<<<<<< HEAD
 #=======
+=======
+
+>>>>>>> b24e5c371f1f308fc8197383d9c7330729829c89
 #import pygeos
 
 #geometries = gdf["geometry"].values
 #merged = pygeos.unary_union(geometries)
 
+<<<<<<< HEAD
 #>>>>>>> e9512372408abf2a06115cfb374ecc59e53be44d
 #<<<<<<< HEAD
+=======
+
+
+>>>>>>> b24e5c371f1f308fc8197383d9c7330729829c89
 #%% separate Powerplants into Regions 
 #powerplants_gdf['Region'] = None
 #for i, row in powerplants_gdf.iterrows():
@@ -149,8 +158,7 @@ result_df.rename(columns={'index_right':'Georegion'}, inplace = True)
 
 #%% Excluders - onwind
 #=======
-#%% Plot Function
-#>>>>>>> c3323361b9e69cb586e155ca35f0af22b47bdc45
+
 
 def plot_area(masked, transform, shape):
     fig, ax = plt.subplots(figsize=(17,17))
