@@ -1,5 +1,6 @@
 #%% IMPORTS
 import pandas as pd 
+import numpy as np
 import geopandas as gpd
 
 import matplotlib.pyplot as plt
@@ -11,7 +12,10 @@ import cartopy.crs as ccrs
 import atlite
 from atlite.gis import shape_availability, ExclusionContainer
 
+import rasterio
 from rasterio.plot import show
+from rasterio.transform import from_origin
+from rasterio.features import geometry_mask
 
 import pyomo as po
 import pyomo.environ as pe
@@ -20,6 +24,7 @@ import pypsa as psa
 
 from shapely.geometry import LineString
 
+import xarray as xr
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
@@ -34,6 +39,8 @@ Level1['ISO_1'].iloc[12]='JP-28'
 path['ISO_1']=Level1['ISO_1']
 path.merge(Level1, on = 'ISO_1')
 
+
+excluder = ExclusionContainer(crs=3035)
 
 #%% read csv data (load  & Powerplants)
 
@@ -86,8 +93,6 @@ Geo4.plot(ax=ax, color="blue")
 Geo5.plot(ax=ax, color="gray")
 
 
-
-
 #%%Region distance
 
 #point1 = Geo1.representative_point()
@@ -100,7 +105,24 @@ Geo5.plot(ax=ax, color="gray")
 #distances.loc["DEU", "NLD"]
 
 
+# <<<<<<< HEAD
+# #<<<<<<< HEAD
+# #=======
+# =======
 
+# >>>>>>> b24e5c371f1f308fc8197383d9c7330729829c89
+# #import pygeos
+
+# #geometries = gdf["geometry"].values
+# #merged = pygeos.unary_union(geometries)
+
+# <<<<<<< HEAD
+# #>>>>>>> e9512372408abf2a06115cfb374ecc59e53be44d
+# #<<<<<<< HEAD
+# =======
+
+
+# >>>>>>> b24e5c371f1f308fc8197383d9c7330729829c89
 #%% separate Powerplants into Regions 
 #powerplants_gdf['Region'] = None
 #for i, row in powerplants_gdf.iterrows():
@@ -126,8 +148,14 @@ GeoRegions_gdf = GeoRegions_gdf.append(Geo4_gdf, ignore_index=True)
 GeoRegions_gdf = GeoRegions_gdf.append(Geo5_gdf, ignore_index=True)
 GeoRegions_gdf = GeoRegions_gdf.rename(columns={0:'geometry'}).set_geometry('geometry')#.to_crs(4087)
 
-powerplants_geometry=powerplants_gdf
-powerplants_geo_gdf = gpd.GeoDataFrame((powerplants_geometry), crs=4326)
+powerplants_geometry= powerplants_gdf
+powerplants_geo_gdf = gpd.GeoDataFrame((powerplants_geometry)).set_crs(4326, allow_override = True)#, crs=4326)
+
+
+
+#powerplants_geo_gdf = powerplants_geo_gdf.to_crs(crs="4326", inplace = True)
+#powerplants_geo_gdf.to_crs(crs = "4326", inplace = True)
+
 powerplants_geo_gdf = powerplants_geo_gdf.rename(columns={0:'geometry'}).set_geometry('geometry')
 
 
@@ -140,8 +168,6 @@ result_df.rename(columns={'index_right':'Georegion'}, inplace = True)
 # the whole landscape of Japan (missing islands?)
 
 #%% Excluders - onwind
-#=======
-
 
 def plot_area(masked, transform, shape):
     fig, ax = plt.subplots(figsize=(17,17))
@@ -150,17 +176,46 @@ def plot_area(masked, transform, shape):
 
 #%% Excluders - Onwind
 
-excluder = ExclusionContainer(crs=3035)
-#excluder.add_geometry('gadm_410-levels-ADM_1-JPN.gpkg') # wurde oben verwendet
-
 #excluder.add_geometry('ne_10m_roads.gpkg', buffer=300)          #Roads (dosent work :( , but the exclusion should be cover by the code 50 of PROBAV)
-excluder.add_geometry('ne_10m_airports.gpkg', buffer=10000)      #Airports 
 
-excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif',crs=3035) #Protected Areas
+#Airports + 10km
+excluder.add_geometry('ne_10m_airports.gpkg', buffer=10000)       
+
+#Protected Areas
+excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif',crs=3035)
+
+# other non suitable areas
 excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
-                    codes=[10,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44] , crs=3035) # other non suitable areas
+                    codes=[10,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44] , crs=3035)
+
+# 300m buffer from built up areas + roads
 excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
-                    codes=[50], buffer=1000, crs=3035) # 300m buffer from built up areas
+                    codes=[50], buffer=1000, crs=3035)
+
+# maximum elevation of 2000m
+df = gpd.read_file('eez_boundaries_v11.gpkg')
+
+df = df[df['TERRITORY1'] == 'Japan']
+
+eez_polygons = df['geometry']
+
+with rasterio.open('GEBCO_2014_2D-JP.nc') as src:
+    elevation = src.read(1)
+
+mask = geometry_mask(eez_polygons, transform=src.transform, out_shape=src.shape)
+elevation_within_eez = elevation.copy()
+elevation_within_eez[~mask] = -9999
+
+elevation_within_eez[elevation_within_eez > -2000] = -9999
+
+with rasterio.open('elevation_within_eez.tif', 'w', driver='GTiff',
+                   height=elevation_within_eez.shape[0],
+                   width=elevation_within_eez.shape[1],
+                   count=1, dtype=elevation_within_eez.dtype,
+                   crs=src.crs, transform=src.transform) as dst:
+    dst.write(elevation_within_eez, 1)
+
+excluder.add_raster('elevation_within_eez.tif', crs=3035)
 #onwind
 #wind-ex=[1,2,3,4,5,6,7,8,9,10,11,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44]
 #wind-in=[12,13,14,18,19,20,21,26,28,29,32,33]
@@ -197,32 +252,53 @@ excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification
 # band, transform = shape_availability(shape5, excluder)
 # plot_area(band, transform, shape5)
 
-#%% Excluders - Offwind (in bearbeitung)
+#%% Excluders - Offwind
 
-#within EEZ --> no code needed? 
-
-#no natural protection areas --> included in Solar exclusions
+#no natural protection areas
+excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', crs=3035)
 
 #10k min distance to shore
 excluder.add_geometry('eez_boundaries_v11.gpkg', buffer=10000)
 
-#up to water depth of 50m
+#up to water depth of 50m + within EEZ
 
+df = gpd.read_file('eez_boundaries_v11.gpkg')
 
-#%% Excluders - Solar (in bearbeitung)
+df = df[df['TERRITORY1'] == 'Japan']
+
+eez_polygons = df['geometry']
+
+with rasterio.open('GEBCO_2014_2D-JP.nc') as src:
+    depth = src.read(1)
+
+mask = geometry_mask(eez_polygons, transform=src.transform, out_shape=src.shape)
+depth_within_eez = depth.copy()
+depth_within_eez[~mask] = -9999
+
+depth_within_eez[depth_within_eez > 50] = -9999
+
+with rasterio.open('depth_within_eez.tif', 'w', driver='GTiff',
+                   height=depth_within_eez.shape[0],
+                   width=depth_within_eez.shape[1],
+                   count=1, dtype=depth_within_eez.dtype,
+                   crs=src.crs, transform=src.transform) as dst:
+    dst.write(depth_within_eez, 1)
+    
+excluder.add_raster('depth_within_eez.tif', crs=3035)
+
+#%% Excluders - Solar
 
 excluder.add_geometry('ne_10m_airports.gpkg', buffer=10000)     #Airports
 
-#WDPA_Oct2022_Public_shp-JPN.tif
-#PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif
+# no natural protection areas
 
-excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', crs=3035) #Protected Areas
+excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', crs=3035) 
 #codes=[1,2,3,7,8,9,11],buffer=1000
 
+# only on suitable land cover classes
 excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
                     codes=[10,15,16,17,22,23,24,25,27,30,31,34,39,40,43,44], crs=3035)
 #Copernicus Global Land Service: Land Cover at 100 m 
-#PORBAV doesen't make any difference in the plot ??
 
 #%% Add exclusions to each region and plot it
 
@@ -267,6 +343,7 @@ transmission_lines['geometry'] = transmission_lines.apply(lambda x: LineString([
 
 # Create a GeoDataFrame for the transmission lines
 transmission_lines_gdf = gpd.GeoDataFrame(transmission_lines, geometry='geometry')
+
 #%% length of Transmission lines and afterwards marginal cost 
 print(transmission_lines_gdf['geometry'][0].length, 'Transmission lines Region1-2 in 100km')
 print(transmission_lines_gdf['geometry'][1].length, 'Transmission lines Region2-3 in 100km')
@@ -275,6 +352,7 @@ print(transmission_lines_gdf['geometry'][3].length, 'Transmission lines Region4-
 
 transmission_lines_gdf['Cost transmission line not specific per MW (still missing ADD LATER)']=transmission_lines_gdf['geometry'].length*100*1.5*400 # *(MW)  Cost = 1.5*400€/MW/length
 print(transmission_lines_gdf['Cost transmission line not specific per MW (still missing ADD LATER)'])
+
 #%%
 # Plot the transmission lines on top of the regions
 fig = plt.figure(figsize=(13,7))
@@ -288,7 +366,6 @@ Geo3.plot(ax=ax, color="green")
 Geo4.plot(ax=ax, color="blue")
 Geo5.plot(ax=ax, color="gray")
 transmission_lines_gdf.plot(ax=ax, color='black', linewidth=2)
-
 
 #%% Eligibility
 

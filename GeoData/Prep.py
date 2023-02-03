@@ -40,7 +40,13 @@ for i in range(4):
     
     Geos[i] = Regions[i].dissolve(by=None, aggfunc='first', as_index=True)
     Geos[i]= Geos[i]['geometry']
+<<<<<<< HEAD
+
+
+print(Geos)
+=======
     
+>>>>>>> d7c80de041175a73908b2ac8116a37523e6a1226
 
 
 
