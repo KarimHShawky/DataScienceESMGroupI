@@ -2,7 +2,7 @@
 import pypsa as psa
 import numpy as np
 import pandas as pd
-#import geopandas as gpd
+import geopandas as gpd
 import gurobipy as gupy
 import Prep
  
@@ -78,7 +78,7 @@ for i in range(5):
             bus=f"Region{i+1}",
             carrier=tech,
             #p_max_pu=ts[tech], Potential!!!
-            #capital_cost=costs.at[tech, "capital_cost"],
+            capital_cost=costs.at[tech, "capital_cost"],
             marginal_cost=costs.at[tech, "marginal_cost"],
             efficiency=costs.at[tech, "efficiency"],
            p_nom_extendable=True,
@@ -138,7 +138,8 @@ for i in range(5):
         "Load",
     "demand",
     bus=f"Region{i+1}",
-    p_set=Prep.load*Prep.pop[i])
+    p_set=Prep.load*Prep.pop[i]
+    )
 #%%
 for i in range(4):
     network.add("Line", f"Line{i+1}-{i+2}", bus0=f"Region{i+1}", bus1=f"Region{i+2}",
@@ -149,7 +150,7 @@ for i in range(4):
                  capital_cost=0, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length
                   )
 #%%
-
+network.lopf(solver_name='gurobi')
 
 
 
