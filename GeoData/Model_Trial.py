@@ -3,7 +3,7 @@ import pypsa as psa
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-
+import gurobipy as gupy
 
 year = 2050
 url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outpus/costs_{year}.csv"
@@ -42,7 +42,7 @@ carriers = ["onwind", "offwind", "solar",  "hydrogen storage underground", "batt
 network.madd(
     "Carrier",
     carriers, 
-    color=["dodgerblue", "aquamarine", "gold",  "magenta", "yellowgreen"],
+    color=["dodgerblue", "aquamarine", "gold",  "magenta", "yellowgreen", "dark blue"],
     co2_emissions=[costs.at[c, "CO2 intensity"] for c in carriers]
 )
 
@@ -68,8 +68,8 @@ for i in range(5):
      p_nom= hydro_power[i] , 
      capital_cost=0,
      marginal_cost=0,
-     efficiency=costs.at[tech, "efficiency"],
-    p_nom_extendable=True,
+     
+    p_nom_extendable=False,
     )
     
     
@@ -108,7 +108,7 @@ for i in range(5):
         p_nom_extendable=True,
         cyclic_state_of_charge=True,
         )
-
+    
 for i in range(4):
     network.add("Line", f"Line{i}-{i+1}", bus_0=f"Region{i}", bus_1=f"Region{i+1}",
                 capital_costs=0, length= 0
