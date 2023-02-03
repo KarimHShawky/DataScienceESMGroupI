@@ -2,7 +2,7 @@
 import pypsa as psa
 import numpy as np
 import pandas as pd
-import geopandas as gpd
+#import geopandas as gpd
 import gurobipy as gupy
 import Prep
  
@@ -132,6 +132,13 @@ for i in range(5):
         p_nom_extendable=True,
         cyclic_state_of_charge=True,
         )
+    
+    
+    network.add(
+        "Load",
+    "demand",
+    bus=f"Region{i+1}",
+    p_set=Prep.load*Prep.pop[i])
 #%%
 for i in range(4):
     network.add("Line", f"Line{i+1}-{i+2}", bus0=f"Region{i+1}", bus1=f"Region{i+2}",

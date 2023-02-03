@@ -18,6 +18,10 @@ path['ISO_1']=Level1['ISO_1']
 path.merge(Level1, on = 'ISO_1')
 
 
+#%%
+jpload= pd.read_csv('load.csv', usecols=['time', 'JP'], index_col=0, parse_dates=True ) #MW
+
+load=jpload.resample('3H').sum() #MWh
 
 
 
