@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 import gurobipy as gupy
-
+import Prep
  
 year = 2050
 url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_{year}.csv"
@@ -133,11 +133,11 @@ for i in range(5):
 #%%
 for i in range(4):
     network.add("Line", f"Line{i+1}-{i+2}", bus0=f"Region{i+1}", bus1=f"Region{i+2}",
-                capital_cost=0, length= 0
+                capital_cost=0, length= Prep.transmission_lines_gdf['geometry'][i].length
                  )
 
     network.add("Line", f"Line{i+2}-{i+1}", bus0=f"Region{i+2}", bus1=f"Region{i+1}",
-                 capital_cost=0, length= 0
+                 capital_cost=0, length= Prep.transmission_lines_gdf['geometry'][i].length
                   )
 #%%
 
