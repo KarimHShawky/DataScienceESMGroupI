@@ -26,6 +26,8 @@ from shapely.geometry import LineString
 
 import xarray as xr
 
+import os
+
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
@@ -142,7 +144,7 @@ powerplants_geo_gdf = gpd.GeoDataFrame((powerplants_geometry)).set_crs(4326, all
 powerplants_geo_gdf = powerplants_geo_gdf.rename(columns={0:'geometry'}).set_geometry('geometry')
 
 
-print("\nGeoDataFrame :\n", GeoRegions_gdf)
+#print("\nGeoDataFrame :\n", GeoRegions_gdf)
 result_df = gpd.sjoin(powerplants_geo_gdf, GeoRegions_gdf, how="left", op='within')
 result_df['index_right']+=1
 result_df.rename(columns={'index_right':'Georegion'}, inplace = True) 
@@ -150,7 +152,7 @@ result_df.rename(columns={'index_right':'Georegion'}, inplace = True)
 # Realised, some Points ARE nan, menans we dont have 
 # the whole landscape of Japan (missing islands?)
 
-#%% Excluders - onwind
+#%% Plot function
 
 def plot_area(masked, transform, shape):
     fig, ax = plt.subplots(figsize=(17,17))
@@ -191,14 +193,25 @@ elevation_within_eez[~mask] = -9999
 
 elevation_within_eez[elevation_within_eez > -2000] = -9999
 
-with rasterio.open('elevation_within_eez.tif', 'w', driver='GTiff',
-                   height=elevation_within_eez.shape[0],
-                   width=elevation_within_eez.shape[1],
-                   count=1, dtype=elevation_within_eez.dtype,
-                   crs=src.crs, transform=src.transform) as dst:
-    dst.write(elevation_within_eez, 1)
+try:
+    os.remove("elevation_within_eez.tif")
+except PermissionError:
+    print("File deletion failed: Permission denied")
+except FileNotFoundError:
+    print("File not found, no need to delete")
+
+try:
+    with rasterio.open('elevation_within_eez.tif', 'w', driver='GTiff',
+                       height=elevation_within_eez.shape[0],
+                       width=elevation_within_eez.shape[1],
+                       count=1, dtype=elevation_within_eez.dtype,
+                       crs=src.crs, transform=src.transform) as dst:
+        dst.write(elevation_within_eez, 1)
+except Exception as e:
+    print(f"An error occurred while creating the file: {e}")
 
 excluder.add_raster('elevation_within_eez.tif', crs=3035)
+
 #onwind
 #wind-ex=[1,2,3,4,5,6,7,8,9,10,11,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44]
 #wind-in=[12,13,14,18,19,20,21,26,28,29,32,33]
@@ -208,32 +221,31 @@ excluder.add_raster('elevation_within_eez.tif', crs=3035)
 
 #%% Are these needed? shouldn't they be called once in the end?
 
-# shape = Geo1.to_crs(excluder.crs)
-# #shape[0]
+shape = Geo1.to_crs(excluder.crs)
+#shape[0]
+band, transform = shape_availability(shape, excluder)
+plot_area(band, transform, shape)
+powerplants_gdf.plot(ax=ax, marker='o', color='black', markersize=5)
 
-# band, transform = shape_availability(shape, excluder)
-# plot_area(band, transform, shape)
-# powerplants_gdf.plot(ax=ax, marker='o', color='black', markersize=5)
+shape2 = Geo2.to_crs(excluder.crs)
+#shape[0]
+band, transform = shape_availability(shape2, excluder)
+plot_area(band, transform, shape2)
 
-# shape2 = Geo2.to_crs(excluder.crs)
-# #shape[0]
-# band, transform = shape_availability(shape2, excluder)
-# plot_area(band, transform, shape2)
+shape3 = Geo3.to_crs(excluder.crs)
+#shape[0]
+band, transform = shape_availability(shape3, excluder)
+plot_area(band, transform, shape3)
 
-# shape3 = Geo3.to_crs(excluder.crs)
-# #shape[0]
-# band, transform = shape_availability(shape3, excluder)
-# plot_area(band, transform, shape3)
+shape4 = Geo4.to_crs(excluder.crs)
+#shape[0]
+band, transform = shape_availability(shape4, excluder)
+plot_area(band, transform, shape4)
 
-# shape4 = Geo4.to_crs(excluder.crs)
-# #shape[0]
-# band, transform = shape_availability(shape4, excluder)
-# plot_area(band, transform, shape4)
-
-# shape5 = Geo5.to_crs(excluder.crs)
-# #shape[0]
-# band, transform = shape_availability(shape5, excluder)
-# plot_area(band, transform, shape5)
+shape5 = Geo5.to_crs(excluder.crs)
+#shape[0]
+band, transform = shape_availability(shape5, excluder)
+plot_area(band, transform, shape5)
 
 #%% Excluders - Offwind
 
