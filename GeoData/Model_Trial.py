@@ -2,9 +2,9 @@
 import pypsa as psa
 import numpy as np
 import pandas as pd
-import geopandas as gpd
+#import geopandas as gpd
 import gurobipy as gupy
-
+import Prep
  
 year = 2050
 url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_{year}.csv"
@@ -28,7 +28,7 @@ def annuity(r, n):
 
 costs["marginal_cost"] = costs["VOM"] + costs["fuel"] / costs["efficiency"]
 
-annuity = costs.apply(lambda x: annuity(x["discount rate"], x["lifetime"]), axis=1)
+annuity = costs.apply(lambda x: annuity(0.07, x["lifetime"]), axis=1)
 
 costs["capital_cost"] = (annuity + costs["FOM"] / 100) * costs["investment"]
  
@@ -88,6 +88,8 @@ for i in range(5):
      bus=f"Region{i+1}",
      carrier='hydro power',
      p_nom= hydro_power[i] , 
+     p_min_pu=0.136,
+     p_max_pu=0.33,
      capital_cost=0,
      marginal_cost=0,
      
@@ -130,14 +132,21 @@ for i in range(5):
         p_nom_extendable=True,
         cyclic_state_of_charge=True,
         )
+    
+    
+    network.add(
+        "Load",
+    "demand",
+    bus=f"Region{i+1}",
+    p_set=Prep.load*Prep.pop[i])
 #%%
 for i in range(4):
     network.add("Line", f"Line{i+1}-{i+2}", bus0=f"Region{i+1}", bus1=f"Region{i+2}",
-                capital_cost=0, length= 0
+                capital_cost=0, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length
                  )
 
     network.add("Line", f"Line{i+2}-{i+1}", bus0=f"Region{i+2}", bus1=f"Region{i+1}",
-                 capital_cost=0, length= 0
+                 capital_cost=0, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length
                   )
 #%%
 
