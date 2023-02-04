@@ -66,7 +66,53 @@ transmission_lines_gdf = gpd.GeoDataFrame(transmission_lines, geometry='geometry
 
 
 
+#%%
+powerplants=gpd.read_file('global_power_plant_database.csv')
+powerplants = powerplants[powerplants['country'] == 'JPN']
+powerplants = powerplants.drop_duplicates()
+# Drop all Hydros pre 1970
+powerplants_hydro= powerplants[powerplants['primary_fuel'] == 'Hydro']
+powerplants_hydro.to_csv('Powerplants_hydro.csv')
+powerplants_gdf = gpd.GeoDataFrame(powerplants, geometry=gpd.points_from_xy(powerplants.longitude, powerplants.latitude))
+ComY=pd.read_csv('ComissioningYears.csv',sep=";")
+powerplants_hydro = powerplants_hydro.merge(ComY, on='name')
+powerplants_hydro['commissioning_year_y']=powerplants_hydro['commissioning_year_y'].astype(int)
+powerplants_hydro = powerplants_hydro.loc[powerplants_hydro['commissioning_year_y'] >= 1970]
 
+Geo_gdf= list(range(len(Regions)))
+for i in range(5):
+    Geo_gdf[i] = gpd.GeoDataFrame(gpd.GeoSeries(Geos[i]))
+  
+GeoTotal_gdf = Geo_gdf[0].append(Geo_gdf[1], ignore_index=True)
+
+for i in range(4):
+        GeoTotal_gdf=GeoTotal_gdf.append(Geo_gdf[i+1], ignore_index=True)
+#Geo1_gdf = Geo1_gdf.rename(columns={0:'geometry'}).set_geometry('geometry').to_crs(4087)
+# GeoRegions_gdf = Geo1_gdf.append(Geo2_gdf, ignore_index=True)
+# GeoRegions_gdf = GeoRegions_gdf.append(Geo3_gdf, ignore_index=True)
+# GeoRegions_gdf = GeoRegions_gdf.append(Geo4_gdf, ignore_index=True)
+# GeoRegions_gdf = GeoRegions_gdf.append(Geo5_gdf, ignore_index=True)
+# GeoRegions_gdf = GeoRegions_gdf.rename(columns={0:'geometry'}).set_geometry('geometry')#.to_crs(4087)
+
+powerplants_geometry= powerplants_gdf
+powerplants_geo_gdf = gpd.GeoDataFrame((powerplants_geometry)).set_crs(4326, allow_override = True)#, crs=4326)
+
+
+
+#powerplants_geo_gdf = powerplants_geo_gdf.to_crs(crs="4326", inplace = True)
+#powerplants_geo_gdf.to_crs(crs = "4326", inplace = True)
+
+powerplants_geo_gdf = powerplants_geo_gdf.rename(columns={0:'geometry'}).set_geometry('geometry')
+
+
+#print("\nGeoDataFrame :\n", GeoRegions_gdf)
+powerplants_w_Reg = gpd.sjoin(powerplants_geo_gdf, GeoTotal_gdf, how="left", op='within')
+powerplants_w_Reg['index_right']+=1
+powerplants_w_Reg.rename(columns={'index_right':'Georegion'}, inplace = True) 
+powerplants_w_Reg['capacity_mw']=powerplants_w_Reg['capacity_mw'].astype(float)
+hydro_sum = powerplants_w_Reg.groupby('Georegion')['capacity_mw'].sum()
+# Realised, some Points ARE nan, menans we dont have 
+# the whole landscape of Japan (missing islands?)
 
 
 

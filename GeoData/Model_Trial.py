@@ -34,7 +34,7 @@ costs["capital_cost"] = (annuity + costs["FOM"] / 100) * costs["investment"]
  
 #%%
 
-hydro_power=[0, 0, 0, 0, 0]
+
 
 network=psa.Network()
 
@@ -91,7 +91,7 @@ for i in range(5):
      f'hydro power{i+1}',
      bus=f"Region{i+1}",
      carrier='hydro power',
-     p_nom= hydro_power[i] , 
+     p_nom= Prep.hydro_sum.iloc[i] , 
      p_min_pu=0.136,
      p_max_pu=0.33,
      capital_cost=0,
@@ -147,11 +147,11 @@ for i in range(5):
 #%%
 for i in range(4):
     network.add("Line", f"Line{i+1}-{i+2}", bus0=f"Region{i+1}", bus1=f"Region{i+2}",
-                capital_cost=400, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length
+                capital_cost=400, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length*100
                  )
 
     network.add("Line", f"Line{i+2}-{i+1}", bus0=f"Region{i+2}", bus1=f"Region{i+1}",
-                 capital_cost=400, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length
+                 capital_cost=400, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length*100
                   )
 #%%
 # network.lopf(solver_name='gurobi')

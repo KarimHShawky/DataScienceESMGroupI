@@ -157,11 +157,11 @@ for i in range(5):
 #%%
 for i in range(4):
     network.add("Line", f"Line{i+1}-{i+2}", bus0=f"Region{i+1}", bus1=f"Region{i+2}",
-                capital_cost=400, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length
+                capital_cost=400, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length*100
                  )
 
     network.add("Line", f"Line{i+2}-{i+1}", bus0=f"Region{i+2}", bus1=f"Region{i+1}",
-                 capital_cost=400, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length
+                 capital_cost=400, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length*100
                   )
 #%%
 network.lopf(solver_name='gurobi')
