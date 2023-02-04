@@ -162,7 +162,8 @@ powerplants_geo_gdf = powerplants_geo_gdf.rename(columns={0:'geometry'}).set_geo
 powerplants_w_Reg = gpd.sjoin(powerplants_geo_gdf, GeoRegions_gdf, how="left", op='within')
 powerplants_w_Reg['index_right']+=1
 powerplants_w_Reg.rename(columns={'index_right':'Georegion'}, inplace = True) 
-
+powerplants_w_Reg['capacity_mw']=powerplants_w_Reg['capacity_mw'].astype(float)
+hydro_sum = powerplants_w_Reg.groupby('Georegion')['capacity_mw'].sum()
 # Realised, some Points ARE nan, menans we dont have 
 # the whole landscape of Japan (missing islands?)
 
