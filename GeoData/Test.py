@@ -56,6 +56,8 @@ powerplants_hydro.to_csv('Powerplants_hydro.csv')
 powerplants_gdf = gpd.GeoDataFrame(powerplants, geometry=gpd.points_from_xy(powerplants.longitude, powerplants.latitude))
 ComY=pd.read_csv('ComissioningYears.csv',sep=";")
 powerplants_hydro = powerplants_hydro.merge(ComY, on='name')
+powerplants_hydro['commissioning_year_y']=powerplants_hydro['commissioning_year_y'].astype(int)
+powerplants_hydro = powerplants_hydro.loc[powerplants_hydro['commissioning_year_y'] >= 1970]
 
 #%% Defining Regions
 
@@ -111,14 +113,14 @@ Geo5.plot(ax=ax, color="gray")
 #distances.loc["DEU", "NLD"]
 
 
-<<<<<<< HEAD
+#<<<<<<< HEAD
 #import pygeos
 
 #geometries = gdf["geometry"].values
 #merged = pygeos.unary_union(geometries)
 
-=======
->>>>>>> 73e6ead37b1b30b933169569c139fe3b0cf0b408
+#=======
+#>>>>>>> 73e6ead37b1b30b933169569c139fe3b0cf0b408
 
 #%% separate Powerplants into Regions 
 #powerplants_gdf['Region'] = None
@@ -157,9 +159,9 @@ powerplants_geo_gdf = powerplants_geo_gdf.rename(columns={0:'geometry'}).set_geo
 
 
 #print("\nGeoDataFrame :\n", GeoRegions_gdf)
-result_df = gpd.sjoin(powerplants_geo_gdf, GeoRegions_gdf, how="left", op='within')
-result_df['index_right']+=1
-result_df.rename(columns={'index_right':'Georegion'}, inplace = True) 
+powerplants_w_Reg = gpd.sjoin(powerplants_geo_gdf, GeoRegions_gdf, how="left", op='within')
+powerplants_w_Reg['index_right']+=1
+powerplants_w_Reg.rename(columns={'index_right':'Georegion'}, inplace = True) 
 
 # Realised, some Points ARE nan, menans we dont have 
 # the whole landscape of Japan (missing islands?)
