@@ -3,7 +3,7 @@ import pypsa as psa
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-import gurobipy as gupy
+#import gurobipy as gupy
 import Prep
  
 year = 2050

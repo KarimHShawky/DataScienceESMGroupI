@@ -21,8 +21,11 @@ path.merge(Level1, on = 'ISO_1')
 #%%
 jpload= pd.read_csv('load.csv', usecols=['time', 'JP'], index_col=0, parse_dates=True ) #MW
 
-load=jpload.resample('3H').sum() #MWh
+load3=jpload.resample('3H').sum() #MWh
 
+pop=[0.0426, 0.0701, 0.5099, 0.2648, 0.1127]
+
+print(load3['JP']*pop[0])
 
 
 #%% Defining Regions
@@ -41,7 +44,7 @@ Regions= [Region1, Region2, Region3, Region4, Region5]
 pop=[0.0426, 0.0701, 0.5099, 0.2648, 0.1127]
 Geos= list(range(len(Regions)))
 Geos[0] = Region1['geometry']
-for i in range(4):
+for i in range(5):
     
     Geos[i] = Regions[i].dissolve(by=None, aggfunc='first', as_index=True)
     Geos[i]= Geos[i]['geometry']

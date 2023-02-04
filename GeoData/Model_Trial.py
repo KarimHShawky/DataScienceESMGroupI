@@ -3,7 +3,7 @@ import pypsa as psa
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-import gurobipy as gupy
+#import gurobipy as gupy
 import Prep
  
 year = 2050
@@ -37,6 +37,10 @@ costs["capital_cost"] = (annuity + costs["FOM"] / 100) * costs["investment"]
 hydro_power=[0, 0, 0, 0, 0]
 
 network=psa.Network()
+
+network.set_snapshots(Prep.load3.index)
+
+print(network.snapshots)
 
 point1=[43,40]
 point2=[43, 40]
@@ -136,27 +140,25 @@ for i in range(5):
     
     network.add(
         "Load",
-    "demand",
+    f"demand{i+1}",
     bus=f"Region{i+1}",
-    p_set=Prep.load*Prep.pop[i]
+    p_set=Prep.load3.JP*Prep.pop[i]
     )
 #%%
 for i in range(4):
     network.add("Line", f"Line{i+1}-{i+2}", bus0=f"Region{i+1}", bus1=f"Region{i+2}",
-                capital_cost=0, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length
+                capital_cost=400, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length
                  )
 
     network.add("Line", f"Line{i+2}-{i+1}", bus0=f"Region{i+2}", bus1=f"Region{i+1}",
-                 capital_cost=0, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length
+                 capital_cost=400, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length
                   )
 #%%
-network.lopf(solver_name='gurobi')
-network.export_to_csv_folder('Base_Model')
+# network.lopf(solver_name='gurobi')
+# network.export_to_csv_folder('Base_Model')
 
-
-
-
-
-
-
-
+line = network.lines
+G = network.generators
+B = network.buses
+L = network.loads
+network.loads_t.p_set.plot()
