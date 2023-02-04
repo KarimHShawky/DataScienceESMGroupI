@@ -40,7 +40,7 @@ network=psa.Network()
 
 network.set_snapshots(Prep.load3.index)
 
-print(network.snapshots)
+
 
 point1=[43,40]
 point2=[43, 40]
