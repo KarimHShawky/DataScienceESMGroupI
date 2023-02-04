@@ -24,9 +24,7 @@ import pypsa as psa
 
 from shapely.geometry import LineString
 
-import xarray as xr
-
-import os
+from vresutils.graph import voronoi_partition_pts
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
@@ -40,9 +38,6 @@ Level1['ISO_1'].iloc[26]='JP-42'
 Level1['ISO_1'].iloc[12]='JP-28'
 path['ISO_1']=Level1['ISO_1']
 path.merge(Level1, on = 'ISO_1')
-
-
-excluder = ExclusionContainer(crs=3035)
 
 #%% read csv data (load  & Powerplants)
 
@@ -162,17 +157,19 @@ powerplants_geo_gdf = powerplants_geo_gdf.rename(columns={0:'geometry'}).set_geo
 powerplants_w_Reg = gpd.sjoin(powerplants_geo_gdf, GeoRegions_gdf, how="left", op='within')
 powerplants_w_Reg['index_right']+=1
 powerplants_w_Reg.rename(columns={'index_right':'Georegion'}, inplace = True) 
-powerplants_w_Reg['capacity_mw']=powerplants_w_Reg['capacity_mw'].astype(float)
-hydro_sum = powerplants_w_Reg.groupby('Georegion')['capacity_mw'].sum()
+
 # Realised, some Points ARE nan, menans we dont have 
 # the whole landscape of Japan (missing islands?)
 
 #%% Plot function
 
 def plot_area(masked, transform, shape):
-    fig, ax = plt.subplots(figsize=(17,17))
+    fig, ax = plt.subplots(figsize=(27,27))
     ax = show(masked, transform=transform, cmap='Greens', vmin=0, ax=ax)
     shape.plot(ax=ax, edgecolor='k', color='None', linewidth=2)
+    
+#%% ExclusionContainer
+excluder = ExclusionContainer(crs=3035, res=300)
 
 #%% Excluders - Onwind
 
@@ -231,19 +228,42 @@ shape5 = Geo5.to_crs(excluder.crs)
 band, transform = shape_availability(shape5, excluder)
 plot_area(band, transform, shape5)
 
+#%% OFFWIND ALTERNATIVE
+#excluder = ExclusionContainer(crs=3035, res=300)
+
+eez = gpd.read_file("eez_v11.gpkg", crs=3035)
+
+eez = eez.query("ISO_TER1 == 'JPN' and POL_TYPE == '200NM'")
+
+gadm = gpd.read_file('gadm_410-levels-ADM_1-JPN.gpkg').set_index("NAME_1")
+
+eez.plot()
+
+eez_shape = eez.geometry
+
 #%% Excluders - Offwind
+excluder = ExclusionContainer(crs=3035, res=300)
 
 #no natural protection areas
 excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', crs=3035)
 
 #10k min distance to shore
-excluder.add_geometry('eez_boundaries_v11.gpkg', buffer=10000)
+# excluder.add_geometry('eez_boundaries_v11.gpkg', buffer=20000)
+excluder.add_geometry('gadm_410-levels-ADM_1-JPN.gpkg', buffer=10000)
 
 #up to water depth of 50m + within EEZ
-excluder.add_raster("GEBCO_2014_2D-JP.nc", codes=lambda x: 0>x>-50, crs=4326, invert=True)
+excluder.add_raster("GEBCO_2014_2D-JP.nc", codes=lambda x: x<-60, crs=4326)#, invert=True)
 
+#excluder.add_raster("GEBCO_2014_2D-JP.nc", crs=4326)#, invert=True)
+
+shape = eez_shape.to_crs(excluder.crs)
+#shape[0]
+band, transform = shape_availability(shape, excluder)
+plot_area(band, transform, shape)
+powerplants_gdf.plot(ax=ax, marker='o', color='black', markersize=5)
 
 #%% Excluders - Solar
+excluder = ExclusionContainer(crs=3035, res=300)
 
 excluder.add_geometry('ne_10m_airports.gpkg', buffer=10000)     #Airports
 
@@ -257,7 +277,7 @@ excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification
                     codes=[10,15,16,17,22,23,24,25,27,30,31,34,39,40,43,44], crs=3035)
 #Copernicus Global Land Service: Land Cover at 100 m 
 
-#%% Add exclusions to each region and plot it
+#%% Add exclusions to each region and plot it (solar)
 
 shape = Geo1.to_crs(excluder.crs)
 #shape[0]
