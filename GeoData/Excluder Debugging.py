@@ -1,24 +1,18 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Feb  3 20:07:05 2023
-
-@author: Athaanatos
-"""
 import numpy as np
 
 import geopandas as gpd
 
 import matplotlib.pyplot as plt
 
-import atlite
 from atlite.gis import shape_availability, ExclusionContainer
 
 import rasterio
 from rasterio.plot import show
 
+import traceback
+
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
-
 
 path=gpd.read_file('gadm_410-levels-ADM_1-JPN.gpkg') #layer 1 admin regions jpn
 Level1=gpd.read_file("gadmJPN-Level1Areas.json")
@@ -32,7 +26,8 @@ path['ISO_1']= path['ISO_1'].str.extract('(\d+)')
 path['ISO_1'] = path['ISO_1'].astype(int)
 
 Region1= path.loc[path['ISO_1'] == 1] 
-Geo1 = Region1['geometry']
+#Geo1 = Region1['geometry']
+Geo1 = Region1.geometry
 
 load=gpd.read_file('load.csv')
 powerplants=gpd.read_file('global_power_plant_database.csv')
@@ -41,7 +36,7 @@ powerplants = powerplants.drop_duplicates()
 powerplants_gdf = gpd.GeoDataFrame(powerplants, geometry=gpd.points_from_xy(powerplants.longitude, powerplants.latitude))
 #%%
 
-excluder = ExclusionContainer(crs=3035)
+excluder = ExclusionContainer(crs=3035, res=300)
 #%%
 
 #Airports + 10km
@@ -52,27 +47,47 @@ excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif',crs=3035)
 #%%
 # other non suitable areas
 excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
-                    codes=[10,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44] , crs=3035)
+                    codes=[10,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44] , crs=4326)
 #%%
 # 300m buffer from built up areas + roads
 excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
-                    codes=[50], buffer=1000, crs=3035)
+                    codes=[50], buffer=1000, crs=4326)
 #%% elevation
 # maximum elevation of 2000m
-with rasterio.open("GEBCO_2014_2D-JP.nc") as src:
-    elevations = src.read(1)
+# with rasterio.open("GEBCO_2014_2D-JP.nc") as src:
+#     elevations = src.read(1)
 
-ex = np.where(elevations > 2000)[0].tolist()
+# ex = np.where(elevations > 2000)[0].tolist()
 
-elevations = np.delete(elevations, ex)
+# elevations = np.delete(elevations, ex)
 #%%
-excluder.add_raster(elevations, crs=3035)
+excluder.add_raster("GEBCO_2014_2D-JP.nc", codes=lambda x: x<2000, crs=4326, invert=True)
+
 #%%
 
 def plot_area(masked, transform, shape):
     fig, ax = plt.subplots(figsize=(17,17))
     ax = show(masked, transform=transform, cmap='Greens', vmin=0, ax=ax)
     shape.plot(ax=ax, edgecolor='k', color='None', linewidth=2)
+
+#%%
+shape = Geo1.to_crs(excluder.crs)
+
+print(shape)
+shape.plot()
+print(excluder)
+
+#%%
+try:
+    
+    shape = Geo1.to_crs(excluder.crs)
+    #shape[0]
+    band, transform = shape_availability(shape, excluder)
+    plot_area(band, transform, shape)
+    powerplants_gdf.plot(ax=ax, marker='o', color='black', markersize=5)
+except AssertionError as e:
+    print(f"An error has occurred: {e}")
+    traceback.print_exc()
 
 #%%
 shape = Geo1.to_crs(excluder.crs)

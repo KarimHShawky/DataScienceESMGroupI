@@ -192,39 +192,8 @@ excluder.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification
                     codes=[50], buffer=1000, crs=3035)
 
 # maximum elevation of 2000m
-df = gpd.read_file('eez_boundaries_v11.gpkg')
+excluder.add_raster("GEBCO_2014_2D-JP.nc", codes=lambda x: x<2000, crs=4326, invert=True)
 
-df = df[df['TERRITORY1'] == 'Japan']
-
-eez_polygons = df['geometry']
-
-with rasterio.open('GEBCO_2014_2D-JP.nc') as src:
-    elevation = src.read(1)
-
-mask = geometry_mask(eez_polygons, transform=src.transform, out_shape=src.shape)
-elevation_within_eez = elevation.copy()
-elevation_within_eez[~mask] = -9999
-
-elevation_within_eez[elevation_within_eez > -2000] = -9999
-
-try:
-    os.remove("elevation_within_eez.tif")
-except PermissionError:
-    print("File deletion failed: Permission denied")
-except FileNotFoundError:
-    print("File not found, no need to delete")
-
-try:
-    with rasterio.open('elevation_within_eez.tif', 'w', driver='GTiff',
-                       height=elevation_within_eez.shape[0],
-                       width=elevation_within_eez.shape[1],
-                       count=1, dtype=elevation_within_eez.dtype,
-                       crs=src.crs, transform=src.transform) as dst:
-        dst.write(elevation_within_eez, 1)
-except Exception as e:
-    print(f"An error occurred while creating the file: {e}")
-
-excluder.add_raster('elevation_within_eez.tif', crs=3035)
 
 #onwind
 #wind-ex=[1,2,3,4,5,6,7,8,9,10,11,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44]
@@ -270,30 +239,8 @@ excluder.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', crs=3035)
 excluder.add_geometry('eez_boundaries_v11.gpkg', buffer=10000)
 
 #up to water depth of 50m + within EEZ
+excluder.add_raster("GEBCO_2014_2D-JP.nc", codes=lambda x: 0>x>-50, crs=4326, invert=True)
 
-df = gpd.read_file('eez_boundaries_v11.gpkg')
-
-df = df[df['TERRITORY1'] == 'Japan']
-
-eez_polygons = df['geometry']
-
-with rasterio.open('GEBCO_2014_2D-JP.nc') as src:
-    depth = src.read(1)
-
-mask = geometry_mask(eez_polygons, transform=src.transform, out_shape=src.shape)
-depth_within_eez = depth.copy()
-depth_within_eez[~mask] = -9999
-
-depth_within_eez[depth_within_eez > 50] = -9999
-
-with rasterio.open('depth_within_eez.tif', 'w', driver='GTiff',
-                   height=depth_within_eez.shape[0],
-                   width=depth_within_eez.shape[1],
-                   count=1, dtype=depth_within_eez.dtype,
-                   crs=src.crs, transform=src.transform) as dst:
-    dst.write(depth_within_eez, 1)
-    
-excluder.add_raster('depth_within_eez.tif', crs=3035)
 
 #%% Excluders - Solar
 
