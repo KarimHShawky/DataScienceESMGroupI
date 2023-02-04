@@ -59,12 +59,12 @@ for i in range(5):
 
 #%%
 
-carriers = ["onwind", "offwind", "solar",  "hydrogen storage underground", "battery storage", "hydro power"]
+carriers = ["onwind", "offwind", "solar",  "hydrogen storage underground", "battery storage", "hydro power", "nuclear"]
 
 network.madd(
     "Carrier",
     carriers, 
-    color=["dodgerblue", "aquamarine", "gold",  "magenta", "yellowgreen", "green"],
+    color=["dodgerblue", "aquamarine", "gold",  "magenta", "yellowgreen", "green", "brown"],
    # co2_emissions=[costs.at[c, "CO2 intensity"] for c in carriers]
 )
 
@@ -95,6 +95,19 @@ for i in range(5):
      
     p_nom_extendable=False,
     )
+    
+    
+    network.add(
+        "Generator",
+        f'nuclear{i+1}' ,
+        bus=f"Region{i+1}",
+        carrier='nuclear',
+        #p_max_pu=ts[tech], Potential!!!
+        capital_cost=costs.at['nuclear', "capital_cost"],
+        marginal_cost=costs.at['nuclear', "marginal_cost"],
+        efficiency=costs.at['nuclear', "efficiency"],
+       p_nom_extendable=True,
+       )
     
     
     
@@ -151,10 +164,16 @@ for i in range(4):
                   )
 #%%
 network.lopf(solver_name='gurobi')
-network.export_to_csv_folder('Base_Model')
+
+Range=[0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3]
 
 
-
+for k in Range:
+    for j in range(5):
+        network.generators.loc[f"nuclear{j+1}", "capital_costs"] = k* costs.at['nuclear', "capital_cost"]
+        network.generators.loc[f"nuclear{j+1}", "marginal_costs"] = k*costs.at['nuclear', "marginal_cost"]
+    network.lopf()
+    network.export_to_csv_folder(f'nuclear{k}')
 
 
 
