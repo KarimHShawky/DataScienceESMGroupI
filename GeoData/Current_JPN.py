@@ -4,10 +4,7 @@ import matplotlib.pyplot as plt
 
 csv='global_power_plant_database.csv'
 globalpowerplants= pd.read_csv(csv)
-#globalpowerplants= globalpowerplants.dropna(subset='generation_data_source')
-#globalpowerplants= globalpowerplants.loc[globalpowerplants['country']!= 'USA']
-#globalpowerplants= globalpowerplants.loc[globalpowerplants['country']!= 'AUS']
-#print(globalpowerplants['country_long'].unique())
+
 
 japan_power=globalpowerplants.loc[globalpowerplants['country']== 'JPN']
 japan_power=japan_power.drop(columns='country')
@@ -23,6 +20,9 @@ jfuel= pd.DataFrame(japan_power.groupby('primary_fuel')['capacity_mw'].sum())
 #jfuel['capacity_mw'].plot.pie(autopct='%1.1f', figsize=(7,7))
 
 japan_power['capacity_factor'] = (japan_power.estimated_generation_gwh_2017 / japan_power.capacity_mw.div(1e3).mul(8760))
+
+japan_production= japan_power.estimated_generation_gwh_2017.sum()
+
 
 japan_hydro=japan_power.loc[japan_power['primary_fuel']== 'Hydro']
 japan_hydro=japan_hydro.reset_index()

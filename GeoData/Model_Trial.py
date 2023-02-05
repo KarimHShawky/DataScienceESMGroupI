@@ -3,9 +3,12 @@ import pypsa as psa
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-#import gurobipy as gupy
+import gurobipy as gupy
 import Prep
- 
+
+
+
+
 year = 2050
 url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_{year}.csv"
 costs = pd.read_csv(url, index_col=[0,1])
@@ -93,6 +96,7 @@ for i in range(5):
             efficiency=costs.at[tech, "efficiency"],
            p_nom_extendable=True,
            )
+        
     network.add( "Generator",
      f'hydro power{i+1}',
      bus=f"Region{i+1}",

@@ -87,12 +87,7 @@ GeoTotal_gdf = Geo_gdf[0].append(Geo_gdf[1], ignore_index=True)
 
 for i in range(4):
         GeoTotal_gdf=GeoTotal_gdf.append(Geo_gdf[i+1], ignore_index=True)
-#Geo1_gdf = Geo1_gdf.rename(columns={0:'geometry'}).set_geometry('geometry').to_crs(4087)
-# GeoRegions_gdf = Geo1_gdf.append(Geo2_gdf, ignore_index=True)
-# GeoRegions_gdf = GeoRegions_gdf.append(Geo3_gdf, ignore_index=True)
-# GeoRegions_gdf = GeoRegions_gdf.append(Geo4_gdf, ignore_index=True)
-# GeoRegions_gdf = GeoRegions_gdf.append(Geo5_gdf, ignore_index=True)
-# GeoRegions_gdf = GeoRegions_gdf.rename(columns={0:'geometry'}).set_geometry('geometry')#.to_crs(4087)
+
 
 powerplants_geometry= powerplants_gdf
 powerplants_geo_gdf = gpd.GeoDataFrame((powerplants_geometry)).set_crs(4326, allow_override = True)#, crs=4326)

@@ -3,9 +3,12 @@ import pypsa as psa
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-#import gurobipy as gupy
+import gurobipy as gupy
 import Prep
- 
+
+
+
+
 year = 2050
 url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_{year}.csv"
 costs = pd.read_csv(url, index_col=[0,1])
@@ -37,12 +40,15 @@ costs["capital_cost"] = (annuity + costs["FOM"] / 100) * costs["investment"]
 
 
 network=psa.Network()
+
 network.set_snapshots(Prep.load3.index)
+
 
 
 #%%
 for i in range (5):
     network.add('Bus', f"Region{i+1}", x= Prep.Geos[i].centroid.x ,y=Prep.Geos[i].centroid.y, v_nom=400, carrier= 'AC')
+network.add('Bus', 'offwindRegion', )
 #%%
 
 for i in range(5):
@@ -55,30 +61,42 @@ for i in range(5):
 
 #%%
 
-carriers = ["onwind", "offwind", "solar",  "hydrogen storage underground", "battery storage", "hydro power", "nuclear"]
+carriers = ["onwind", "offwind", "solar",  "hydrogen storage underground", "battery storage", "hydro power"]
 
 network.madd(
     "Carrier",
     carriers, 
-    color=["dodgerblue", "aquamarine", "gold",  "magenta", "yellowgreen", "green", "brown"],
-   # co2_emissions=[costs.at[c, "CO2 intensity"] for c in carriers]
+    color=["dodgerblue", "aquamarine", "gold",  "magenta", "yellowgreen", "green"],
+   
 )
 
 #%%
+network.add(
+    'Generator',
+    'offwind',
+    bus= 'offwindRegion',
+    carrier='offwind',
+    capital_cost=costs.at['offwind', "capital_cost"],
+    marginal_cost=costs.at['offwind', "marginal_cost"],
+    efficiency=costs.at['offwind', "efficiency"],
+    p_nom_extendable=True,
+    #p_nom_max=
+    )
 for i in range(5):
 
-    for tech in ["onwind", "offwind", "solar"]:
+    for tech in ["onwind",  "solar"]:
         network.add(
             "Generator",
             f'{tech}{i+1}' ,
             bus=f"Region{i+1}",
             carrier=tech,
-            #p_max_pu=ts[tech], Potential!!!
+            #p_nom_max=tech[i], Potential!!!
             capital_cost=costs.at[tech, "capital_cost"],
             marginal_cost=costs.at[tech, "marginal_cost"],
             efficiency=costs.at[tech, "efficiency"],
            p_nom_extendable=True,
            )
+        
     network.add( "Generator",
      f'hydro power{i+1}',
      bus=f"Region{i+1}",
@@ -137,7 +155,9 @@ for i in range(5):
     p_set=Prep.load3.JP*Prep.pop[i]
     )
     
-    
+    network.add(
+        'Link', f'offwind{i+1}', bus0='offwindRegion', bus1=f'Region{i+1}', carrier='DC')
+
     network.add(
         "Generator",
         f'nuclear{i+1}' ,
