@@ -81,7 +81,7 @@ network.add(
     marginal_cost=costs.at['offwind', "marginal_cost"],
     efficiency=costs.at['offwind', "efficiency"],
     p_nom_extendable=True,
-    #p_nom_max=offwind_ts
+    p_nom_max=offwind_ts
     )
 for i in range(5):
 
@@ -91,7 +91,7 @@ for i in range(5):
             f'onwind{i+1}' ,
             bus=f"Region{i+1}",
             carrier='onwind',
-            #p_nom_max=onwind_ts[i]
+            p_nom_max=onwind_ts[i],
             capital_cost=costs.at['onwind', "capital_cost"],
             marginal_cost=costs.at['onwind', "marginal_cost"],
             efficiency=costs.at['onwind', "efficiency"],
@@ -102,7 +102,7 @@ for i in range(5):
             f'solar{i+1}' ,
             bus=f"Region{i+1}",
             carrier='solar',
-            #p_nom_max=solar_ts[i]
+            p_nom_max=solar_ts[i],
             capital_cost=costs.at['solar', "capital_cost"],
             marginal_cost=costs.at['solar', "marginal_cost"],
             efficiency=costs.at['solar', "efficiency"],
