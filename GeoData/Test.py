@@ -103,25 +103,6 @@ Geo5.plot(ax=ax, color="gray")
 
 #%%Region distance
 
-#point1 = Geo1.representative_point()
-#point2 = Geo2.representative_point()
-#point3 = Geo4.representative_point()
-#point4 = Geo4.representative_point()
-#point4 = Geo5.representative_point()
-#Jpoints= pd.DataFrame[point1, point2, point3, point4, point5]
-#distances = pd.concat({k: points.distance(p) for k, p in points.items()}, axis=1).div(1e3) # km
-#distances.loc["DEU", "NLD"]
-
-
-#<<<<<<< HEAD
-#import pygeos
-
-#geometries = gdf["geometry"].values
-#merged = pygeos.unary_union(geometries)
-
-#=======
-#>>>>>>> 73e6ead37b1b30b933169569c139fe3b0cf0b408
-
 #%% separate Powerplants into Regions 
 #powerplants_gdf['Region'] = None
 #for i, row in powerplants_gdf.iterrows():
