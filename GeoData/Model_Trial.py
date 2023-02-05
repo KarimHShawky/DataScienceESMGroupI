@@ -6,8 +6,9 @@ import geopandas as gpd
 import gurobipy as gupy
 import Prep
 
-
-
+offwind_ts=Prep.offwind2020
+onwind_ts=Prep.onwind2020
+solar_ts=Prep.solar2020
 
 year = 2050
 url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_{year}.csv"
@@ -80,20 +81,31 @@ network.add(
     marginal_cost=costs.at['offwind', "marginal_cost"],
     efficiency=costs.at['offwind', "efficiency"],
     p_nom_extendable=True,
-    #p_nom_max=
+    #p_nom_max=offwind_ts
     )
 for i in range(5):
 
-    for tech in ["onwind",  "solar"]:
-        network.add(
+    
+    network.add(
             "Generator",
-            f'{tech}{i+1}' ,
+            f'onwind{i+1}' ,
             bus=f"Region{i+1}",
-            carrier=tech,
-            #p_nom_max=tech[i], Potential!!!
-            capital_cost=costs.at[tech, "capital_cost"],
-            marginal_cost=costs.at[tech, "marginal_cost"],
-            efficiency=costs.at[tech, "efficiency"],
+            carrier='onwind',
+            #p_nom_max=onwind_ts[i]
+            capital_cost=costs.at['onwind', "capital_cost"],
+            marginal_cost=costs.at['onwind', "marginal_cost"],
+            efficiency=costs.at['onwind', "efficiency"],
+           p_nom_extendable=True,
+           )
+    network.add(
+            "Generator",
+            f'solar{i+1}' ,
+            bus=f"Region{i+1}",
+            carrier='solar',
+            #p_nom_max=solar_ts[i]
+            capital_cost=costs.at['solar', "capital_cost"],
+            marginal_cost=costs.at['solar', "marginal_cost"],
+            efficiency=costs.at['solar', "efficiency"],
            p_nom_extendable=True,
            )
         
