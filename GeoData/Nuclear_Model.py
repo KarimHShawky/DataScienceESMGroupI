@@ -34,20 +34,15 @@ costs["capital_cost"] = (annuity + costs["FOM"] / 100) * costs["investment"]
  
 #%%
 
-hydro_power=[0, 0, 0, 0, 0]
+
 
 network=psa.Network()
 network.set_snapshots(Prep.load3.index)
 
-point1=[43,40]
-point2=[43, 40]
-point3=[43, 40]
-point4=[43, 40]
-point5=[43, 40]
-points=[point1, point2, point3, point4, point5] 
+
 #%%
 for i in range (5):
-    network.add('Bus', f"Region{i+1}", x= points[i][0],y=points[i][1], v_nom=400, carrier= 'AC')
+    network.add('Bus', f"Region{i+1}", x= Prep.Geos[i].centroid.x ,y=Prep.Geos[i].centroid.y, v_nom=400, carrier= 'AC')
 #%%
 
 for i in range(5):
@@ -88,7 +83,7 @@ for i in range(5):
      f'hydro power{i+1}',
      bus=f"Region{i+1}",
      carrier='hydro power',
-     p_nom= hydro_power[i] , 
+     p_nom= Prep.hydro_sum.iloc[i] , 
      p_min_pu=0.136,
      p_max_pu=0.33,
      capital_cost=0,
@@ -96,19 +91,6 @@ for i in range(5):
      
     p_nom_extendable=False,
     )
-    
-    
-    network.add(
-        "Generator",
-        f'nuclear{i+1}' ,
-        bus=f"Region{i+1}",
-        carrier='nuclear',
-        #p_max_pu=ts[tech], Potential!!!
-        capital_cost=costs.at['nuclear', "capital_cost"],
-        marginal_cost=costs.at['nuclear', "marginal_cost"],
-        efficiency=costs.at['nuclear', "efficiency"],
-       p_nom_extendable=True,
-       )
     
     
     
@@ -154,6 +136,21 @@ for i in range(5):
     bus=f"Region{i+1}",
     p_set=Prep.load3.JP*Prep.pop[i]
     )
+    
+    
+    network.add(
+        "Generator",
+        f'nuclear{i+1}' ,
+        bus=f"Region{i+1}",
+        carrier='nuclear',
+        #p_max_pu=ts[tech], Potential!!!
+        capital_cost=costs.at['nuclear', "capital_cost"],
+        marginal_cost=costs.at['nuclear', "marginal_cost"],
+        efficiency=costs.at['nuclear', "efficiency"],
+       p_nom_extendable=True,
+       )
+    
+
 #%%
 for i in range(4):
     network.add("Line", f"Line{i+1}-{i+2}", bus0=f"Region{i+1}", bus1=f"Region{i+2}",

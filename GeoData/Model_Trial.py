@@ -42,15 +42,10 @@ network.set_snapshots(Prep.load3.index)
 
 
 
-point1=[43,40]
-point2=[43, 40]
-point3=[43, 40]
-point4=[43, 40]
-point5=[43, 40]
-points=[point1, point2, point3, point4, point5] 
 #%%
 for i in range (5):
-    network.add('Bus', f"Region{i+1}", x= points[i][0],y=points[i][1], v_nom=400, carrier= 'AC')
+    network.add('Bus', f"Region{i+1}", x= Prep.Geos[i].centroid.x ,y=Prep.Geos[i].centroid.y, v_nom=400, carrier= 'AC')
+network.add('Bus', 'offwindRegion', )
 #%%
 
 for i in range(5):
@@ -69,19 +64,30 @@ network.madd(
     "Carrier",
     carriers, 
     color=["dodgerblue", "aquamarine", "gold",  "magenta", "yellowgreen", "green"],
-   # co2_emissions=[costs.at[c, "CO2 intensity"] for c in carriers]
+   
 )
 
 #%%
+network.add(
+    'Generator',
+    'offwind',
+    bus= 'offwindRegion',
+    carrier='offwind',
+    capital_cost=costs.at['offwind', "capital_cost"],
+    marginal_cost=costs.at['offwind', "marginal_cost"],
+    efficiency=costs.at['offwind', "efficiency"],
+    p_nom_extendable=True,
+    #p_nom_max=
+    )
 for i in range(5):
 
-    for tech in ["onwind", "offwind", "solar"]:
+    for tech in ["onwind",  "solar"]:
         network.add(
             "Generator",
             f'{tech}{i+1}' ,
             bus=f"Region{i+1}",
             carrier=tech,
-            #p_max_pu=ts[tech], Potential!!!
+            #p_nom_max=tech[i], Potential!!!
             capital_cost=costs.at[tech, "capital_cost"],
             marginal_cost=costs.at[tech, "marginal_cost"],
             efficiency=costs.at[tech, "efficiency"],
@@ -144,15 +150,17 @@ for i in range(5):
     bus=f"Region{i+1}",
     p_set=Prep.load3.JP*Prep.pop[i]
     )
+    
+    network.add(
+        'Link', f'offwind{i+1}', bus0='offwindRegion', bus1=f'Region{i+1}', carrier='DC')
+
 #%%
 for i in range(4):
     network.add("Line", f"Line{i+1}-{i+2}", bus0=f"Region{i+1}", bus1=f"Region{i+2}",
                 capital_cost=400, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length*100
                  )
 
-    network.add("Line", f"Line{i+2}-{i+1}", bus0=f"Region{i+2}", bus1=f"Region{i+1}",
-                 capital_cost=400, length= 1.5*Prep.transmission_lines_gdf['geometry'][i].length*100
-                  )
+   
 #%%
 # network.lopf(solver_name='gurobi')
 # network.export_to_csv_folder('Base_Model')
