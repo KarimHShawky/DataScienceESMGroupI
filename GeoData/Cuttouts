@@ -1,0 +1,248 @@
+
+from atlite.gis import ExclusionContainer
+from atlite.gis import shape_availability
+import atlite
+import rasterio
+from rasterio.plot import show
+from rasterio.transform import from_origin
+from rasterio.features import geometry_mask
+import geopandas as gpd
+import pandas as pd
+import numpy as np
+import xarray as xr
+import os
+import matplotlib.pyplot as plt
+import country_converter as coco
+import atlite
+
+import re
+
+path=gpd.read_file('gadm_410-levels-ADM_1-JPN.gpkg') #layer 1 admin regions jpn
+#print(path.NAME_1)
+Level1=gpd.read_file("gadmJPN-Level1Areas.json")
+Level1['ISO_1'].iloc[26]='JP-42'
+Level1['ISO_1'].iloc[12]='JP-28'
+path['ISO_1']=Level1['ISO_1']
+path.merge(Level1, on = 'ISO_1')
+
+
+Region1= path.loc[path['ISO_1'] == 1]                       # Pop.%  4.26%
+Region2= path.loc[(path['ISO_1'] >1) & (path['ISO_1'] < 8)]         # 7.01%
+Region3= path.loc[(path['ISO_1'] >7) & (path['ISO_1'] < 24)]        # 50.99%
+Region4= path.loc[(path['ISO_1'] >23) & (path['ISO_1'] < 40)]       # 26.48%
+Region5= path.loc[(path['ISO_1'] >39) ]                             # 11.27%
+Region1.reset_index(drop=True)
+
+# Use the dissolve method to merge the polygons
+Geo1 = Region1['geometry']
+Geo2 = Region2.dissolve()#by=None, aggfunc='first')#, as_index=True)
+Geo3 = Region3.dissolve(by=None, aggfunc='first')#, as_index=True)
+Geo4 = Region4.dissolve(by=None, aggfunc='first')#, as_index=True)
+Geo5 = Region5.dissolve(by=None, aggfunc='first')#, as_index=True)
+
+
+Geo2= Geo2['geometry']
+Geo3= Geo3['geometry']
+Geo4= Geo4['geometry']
+Geo5= Geo5['geometry']
+
+#regions = gpd.read_file('gadm_410-levels-ADM_1-JPN.gpkg')
+eez = gpd.read_file("eez_v11.gpkg", crs=3035)
+eez = eez.query("ISO_TER1 == 'JPN' and POL_TYPE == '200NM'")
+gadm = gpd.read_file('gadm_410-levels-ADM_1-JPN.gpkg').set_index("NAME_1")
+eez_shape = eez.geometry
+
+#regions.plot()
+
+minx, miny, maxx, maxy = regions.total_bounds
+buffer = 0.25
+cutout = atlite.Cutout("Japan.nc")
+cutout = atlite.Cutout(
+   path= 'J.nc',
+   module="era5",
+   x=slice(minx-buffer, maxx+buffer),
+   y=slice(miny-buffer, maxy+buffer),
+   time="2020",
+)
+
+cutout.data
+
+def plot_area(masked, transform, shape):
+    fig, ax = plt.subplots(figsize=(5,5))
+    ax = show(masked, transform=transform, cmap='Greens', vmin=0, ax=ax)
+    shape.plot(ax=ax, edgecolor='k', color='None', linewidth=1)
+
+#%% Excluders    
+excluder_onwind = ExclusionContainer(crs=3035)
+excluder_onwind.add_geometry('ne_10m_roads.gpkg', buffer=300)           #Roads 
+excluder_onwind.add_geometry('ne_10m_airports.gpkg', buffer=10000)      #Airports 
+excluder_onwind.add_raster('WDPA_Oct2022_Public_shp-JPN.tif',crs=3035) #Protected Areas
+excluder_onwind.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
+                    codes=[10,15,16,17,22,23,24,25,27,30,31,34,35,36,37,38,39,40,41,42,43,44] , crs=3035) # other non suitable areas
+excluder_onwind.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
+                    codes=[50], buffer=1000, crs=3035)
+excluder_onwind.add_raster("GEBCO_2014_2D-JP.nc", codes=lambda x: x<2000, crs=4326, invert=True)
+
+# df = gpd.read_file('eez_boundaries_v11.gpkg')# maximum elevation of 2000m
+# df = df[df['TERRITORY1'] == 'Japan']
+# eez_polygons = df['geometry']
+# with rasterio.open('GEBCO_2014_2D-JP.nc') as src:
+#     elevation = src.read(1)
+# mask = geometry_mask(eez_polygons, transform=src.transform, out_shape=src.shape)
+# elevation_within_eez = elevation.copy()
+# elevation_within_eez[~mask] = -9999
+# elevation_within_eez[elevation_within_eez > -2000] = -9999
+# with rasterio.open('elevation_within_eez.tif', 'w', driver='GTiff',
+#                    height=elevation_within_eez.shape[0],
+#                    width=elevation_within_eez.shape[1],
+#                    count=1, dtype=elevation_within_eez.dtype,
+#                    crs=src.crs, transform=src.transform) as dst:
+#     dst.write(elevation_within_eez, 1)
+
+# excluder_onwind.add_raster('elevation_within_eez.tif', crs=3035)
+
+#%% Excluders
+
+excluder_solar = ExclusionContainer(crs=3035)
+excluder_solar.add_geometry('ne_10m_roads.gpkg', buffer=300)          #Roads
+excluder_solar.add_geometry('ne_10m_airports.gpkg', buffer=10000)     #Airports
+excluder_solar.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', crs=3035) #Protected Areas
+excluder_solar.add_raster('PROBAV_LC100_global_v3.0.1_2019-nrt_Discrete-Classification-map_EPSG-4326-JP.tif',
+                    codes=[10,15,16,17,22,23,24,25,27,30,31,34,39,40,43,44], crs=3035)
+
+#%% Excluders Offwind
+eez = gpd.read_file("eez_v11.gpkg", crs=3035)
+eez = eez.query("ISO_TER1 == 'JPN' and POL_TYPE == '200NM'")
+gadm = gpd.read_file('gadm_410-levels-ADM_1-JPN.gpkg').set_index("NAME_1")
+eez_shape = eez.geometry
+
+excluder_offwind = ExclusionContainer(crs=3035, res=300)
+excluder_offwind.add_raster('WDPA_Oct2022_Public_shp-JPN.tif', crs=3035) #no natural protection areas
+excluder_offwind.add_geometry('gadm_410-levels-ADM_1-JPN.gpkg', buffer=10000) #10k min distance to shore
+excluder_offwind.add_raster("GEBCO_2014_2D-JP.nc", codes=lambda x: x<-60, crs=4326)#, invert=True) #up to water depth of 50m + within EEZ
+
+#%% Availablecapacity solar
+
+def Available_solar(i,excluder):
+    masked, transform = shape_availability(i.to_crs(3035).geometry, excluder)
+    
+    #plot_area(masked, transform,i.to_crs(3035).geometry)  
+    #cutout = atlite.Cutout("jp.nc")
+    #cutout.availabilitymatrix
+    A = cutout.availabilitymatrix(i, excluder)
+    
+    cap_per_sqkm = 3 # MW/km2
+    area = cutout.grid.set_index(['y', 'x']).to_crs(3035).area / 1e6
+    area = xr.DataArray(area, dims=('spatial'))
+    capacity_matrix = A.stack(spatial=['y', 'x']) * area * cap_per_sqkm
+    
+    pv = cutout.pv(
+    panel=atlite.solarpanels.CdTe,
+    matrix=capacity_matrix,
+    orientation='latitude_optimal',
+    index=i.index,
+    #per_unit=True
+    )
+    pv=pv.to_pandas()
+    pv = pv.resample('3H').sum()
+    #pv.plot()
+    #plt.ylabel('solar')
+    #plt.xlabel("pv")
+    return pv
+#xy=Availablecapacity(Geo1, excluder_solar,2)
+L = [Geo1, Geo2, Geo3, Geo4, Geo5]
+P = ['solar1', 'solar2', 'solar3', 'solar4', 'solar5']
+
+#for geo, pv in zip(L, P):
+ #   pv=Availablecapacity(geo, excluder_solar)
+PV_2020 = {}
+for geo, pv_name in zip(L, P):
+    pv = Available_solar(geo, excluder_solar)
+    PV_2020[pv_name] = pv
+
+# for item in range (5):
+#     Availablecapacity(L[item], excluder_solar,item)
+#Availablecapacity(L, excluder_solar)
+#%% Availablecapacity onwind
+
+def Available_onwind(i,excluder):
+    masked, transform = shape_availability(i.to_crs(3035).geometry, excluder)
+    
+    plot_area(masked, transform,i.to_crs(3035).geometry)
+    
+    #regions.index = regions.GID_1
+    
+    cutout = atlite.Cutout("jp.nc")
+    
+    cutout.availabilitymatrix
+    
+    A = cutout.availabilitymatrix(i, excluder)
+    
+    cap_per_sqkm = 3 # MW/km2
+    
+    area = cutout.grid.set_index(['y', 'x']).to_crs(3035).area / 1e6
+    
+    area = xr.DataArray(area, dims=('spatial'))
+    
+    capacity_matrix = A.stack(spatial=['y', 'x']) * area * cap_per_sqkm
+    
+    wind = cutout.wind(
+        atlite.windturbines.Vestas_V112_3MW,
+        matrix=capacity_matrix,
+        index=i.index,
+        #per_unit=True,
+    )
+    
+    wind=wind.to_pandas()
+    wind = wind.resample('3H').sum()
+    #wind.plot()
+    #plt.ylabel(i)
+    #plt.xlabel("wind")
+    return wind
+    #xy=Availablecapacity(Geo1, excluder_solar,2)
+L = [Geo1, Geo2, Geo3, Geo4, Geo5]
+OW = ['onwind1', 'onwind2', 'onwind3', 'onwind4', 'onwind5']
+
+#for geo, pv in zip(L, P):
+ #   pv=Availablecapacity(geo, excluder_solar)
+Onwind_2020 = {}
+for geo, w_name in zip(L, OW):
+    w = Availablecapacity(geo, excluder_onwind)
+    Onwind_2020[w_name] = w
+    
+ 
+#Availablecapacity(Geo1, excluder_solar)
+#%% Availablecapacity offind
+shape = eez_shape.to_crs(excluder_offwind.crs)
+band, transform = shape_availability(shape, excluder_offwind)
+plot_area(band, transform, shape)
+masked, transform = shape_availability(shape.to_crs(3035).geometry, excluder_offwind)
+
+plot_area(masked, transform,shape.to_crs(3035).geometry)
+
+#regions.index = regions.GID_1
+
+cutout = atlite.Cutout("jp.nc")
+
+cutout.availabilitymatrix
+
+A = cutout.availabilitymatrix(shape, excluder_offwind)
+
+cap_per_sqkm = 3 # MW/km2
+
+area = cutout.grid.set_index(['y', 'x']).to_crs(3035).area / 1e6
+
+area = xr.DataArray(area, dims=('spatial'))
+
+capacity_matrix = A.stack(spatial=['y', 'x']) * area * cap_per_sqkm
+
+wind = cutout.wind(
+    atlite.windturbines.NREL_ReferenceTurbine_5MW_offshore,
+    matrix=capacity_matrix,
+    index=shape.index,
+    #per_unit=True,
+)
+Offwind_2020=wind.to_pandas()
+Offwind_2020 = Offwind_2020.resample('3H').sum()
+Offwind_2020.plot()
+
