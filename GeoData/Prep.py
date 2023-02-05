@@ -111,16 +111,25 @@ hydro_sum = powerplants_w_Reg.groupby('Georegion')['capacity_mw'].sum()
 
 
 
-onwind2020=[]
-solar2020=[]
+onwind2020=list(range(len(Regions)))
+solar2020=list(range(len(Regions)))
+p_nom_on=list(range(len(Regions)))
+p_nom_sol=list(range(len(Regions)))
 for i in range(5):
+    
     onwind2020[i]=pd.read_csv(f'onwind{i+1}_2020.csv',  index_col=0, parse_dates=True)
     solar2020[i]=pd.read_csv(f'solar{i+1}_2020.csv', index_col=0,parse_dates=True)
-
+    on=pd.read_csv(f'onwind{i+1}_2020MW.csv',  index_col=0, parse_dates=True)
+    sol=pd.read_csv(f'solar{i+1}_2020MW.csv', index_col=0,parse_dates=True)
+    
+    p_nom_on[i]=onwind2020[i].iloc[0]/on.iloc[0]
+    p_nom_sol[i]=solar2020[i].iloc[0]/sol.iloc[0]
 
 offwind2020=pd.read_csv('Offwind_2020.csv', index_col=0 ,parse_dates=True)
 
+off=pd.read_csv('Offwind_2020-MW.csv', index_col=0 ,parse_dates=True)
 
+p_nom_off=offwind2020.iloc[0]/off.iloc[0]
 
 
 

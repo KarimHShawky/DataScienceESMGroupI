@@ -10,6 +10,11 @@ offwind_ts=Prep.offwind2020
 onwind_ts=Prep.onwind2020
 solar_ts=Prep.solar2020
 
+p_nom_max_off=Prep.p_nom_off
+p_nom_max_on=Prep.p_nom_on
+p_nom_max_sol=Prep.p_nom_sol
+
+
 year = 2050
 url = f"https://raw.githubusercontent.com/PyPSA/technology-data/master/outputs/costs_{year}.csv"
 costs = pd.read_csv(url, index_col=[0,1])
@@ -81,7 +86,9 @@ network.add(
     marginal_cost=costs.at['offwind', "marginal_cost"],
     efficiency=costs.at['offwind', "efficiency"],
     p_nom_extendable=True,
-    p_nom_max=offwind_ts
+    p_nom_max= p_nom_max_off,
+    p_max_pu=offwind_ts
+    
     )
 for i in range(5):
 
@@ -91,7 +98,8 @@ for i in range(5):
             f'onwind{i+1}' ,
             bus=f"Region{i+1}",
             carrier='onwind',
-            p_nom_max=onwind_ts[i],
+            p_max_pu=onwind_ts[i],
+            p_nom_max=p_nom_max_on ,
             capital_cost=costs.at['onwind', "capital_cost"],
             marginal_cost=costs.at['onwind', "marginal_cost"],
             efficiency=costs.at['onwind', "efficiency"],
@@ -102,7 +110,8 @@ for i in range(5):
             f'solar{i+1}' ,
             bus=f"Region{i+1}",
             carrier='solar',
-            p_nom_max=solar_ts[i],
+            p_max_pu=solar_ts[i],
+            p_nom_max=p_nom_max_sol ,
             capital_cost=costs.at['solar', "capital_cost"],
             marginal_cost=costs.at['solar', "marginal_cost"],
             efficiency=costs.at['solar', "efficiency"],
